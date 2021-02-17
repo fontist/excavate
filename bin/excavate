@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "bundler/setup"
+require "excavate"
+
+target = Dir.mktmpdir(nil, Dir.pwd)
+Excavate::Archive.new(ARGV[0]).extract(target, recursive_packages: true)

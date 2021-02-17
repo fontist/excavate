@@ -1,0 +1,2 @@
+inherit_from:
+  - 'https://raw.githubusercontent.com/fontist/oss-guides/master/ci/rubocop.yml'
