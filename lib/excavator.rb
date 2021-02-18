@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require_relative "deep_extract/version"
+require_relative "excavator/version"
 
-module DeepExtract
+module Excavator
   class Error < StandardError; end
   # Your code goes here...
 end

@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require_relative "lib/deep_extract/version"
+require_relative "lib/excavator/version"
 
 Gem::Specification.new do |spec|
-  spec.name          = "deep_extract"
-  spec.version       = DeepExtract::VERSION
+  spec.name          = "excavator"
+  spec.version       = Excavator::VERSION
   spec.authors       = ["Ribose Inc."]
   spec.email         = ["operations@ribose.com"]
 
