@@ -6,7 +6,7 @@ Gem::Specification.new do |spec|
   spec.name          = "excavate"
   spec.version       = Excavate::VERSION
   spec.authors       = ["Ribose Inc."]
-  spec.email         = ["operations@ribose.com"]
+  spec.email         = ["open.source@ribose.com"]
 
   spec.summary       = "Extract nested archives with a single command."
   spec.description   = "Extract nested archives with a single command."
