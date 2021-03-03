@@ -24,15 +24,30 @@ module Excavate
       FileUtils.rm_rf(target)
     end
 
-    def extract(target, recursive_packages: false)
+    def extract(target = nil, recursive_packages: false)
+      source = File.expand_path(@archive)
+      target ||= default_target(source)
+      raise(TargetNotEmptyError, "Target directory `#{File.basename(target)}` is not empty.") unless Dir.empty?(target)
+
       if recursive_packages
-        extract_recursively(@archive, target)
+        extract_recursively(source, target)
       else
-        extract_once(@archive, target)
+        extract_once(source, target)
       end
+
+      target
     end
 
     private
+
+    def default_target(source)
+      target = File.expand_path(File.basename(source, ".*"))
+      raise(TargetExistsError, "Target directory `#{File.basename(target)}` already exists.") if File.exist?(target)
+
+      FileUtils.mkdir(target)
+
+      target
+    end
 
     def extract_recursively(archive, target)
       extract_once(archive, target)

@@ -33,18 +33,35 @@ To extract an archive containing other archives inside:
 
 [source,ruby]
 ----
-archive = "path/to/archive.cab"
 target = Dir.mktmpdir
-Excavate::Archive.new(archive).extract(target, recursive_packages: true)
+Excavate::Archive.new("path/to/archive.cab").extract(target, recursive_packages: true)
 ----
 
 The same but allowing to choose only necessary files inside:
 
 [source,ruby]
 ----
+target = Dir.mktmpdir
 Excavate::Archive.new("path/to/archive.cab").files(recursive_packages: true) do |path|
-  FileUtils.mv(path, Dir.mktmpdir) if path.end_with?(".txt")
+  FileUtils.mv(path, target) if path.end_with?(".txt")
 end
+----
+
+
+== CLI
+
+`excavate` can be used via command line. To extract an archive including the nested ones:
+
+[source,sh]
+----
+$ excavate --recursive path/to/archive.cab
+----
+
+If you'd like to skip extraction of nested archives, just use:
+
+[source,sh]
+----
+$ excavate path/to/archive.cab
 ----
 
 
