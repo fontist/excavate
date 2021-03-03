@@ -31,4 +31,5 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "ruby-ole", "~> 1.0"
   spec.add_runtime_dependency "rubyzip", "~> 2.3"
   spec.add_runtime_dependency "seven_zip_ruby", "~> 1.0"
+  spec.add_runtime_dependency "thor", "~> 1.0"
 end

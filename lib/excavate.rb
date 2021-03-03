@@ -9,4 +9,6 @@ require_relative "excavate/utils"
 module Excavate
   class Error < StandardError; end
   class UnknownArchiveError < Error; end
+  class TargetExistsError < Error; end
+  class TargetNotEmptyError < Error; end
 end
