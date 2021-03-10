@@ -1,3 +1,7 @@
+image:https://img.shields.io/gem/v/excavate.svg["Gem Version", link="https://rubygems.org/gems/excavate"]
+// image:https://codeclimate.com/github/fontist/expressir/badges/gpa.svg["Code Climate", link="https://codeclimate.com/github/fontist/excavate"]
+image:https://github.com/fontist/excavate/workflows/rspec/badge.svg["Build Status", link="https://github.com/fontist/excavate/actions?workflow=rspec"]
+
 = Excavate: Ruby gem to extract nested archives
 
 Extract nested archives with a single command.
