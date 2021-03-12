@@ -80,6 +80,12 @@ RSpec.describe Excavate::Archive do
       include_examples "yields filename", "Marlett.ttf"
     end
 
+    context "xar" do
+      let(:archive_example) { "fonts.pkg" }
+
+      include_examples "yields filename", "Marlett.ttf"
+    end
+
     context "zip" do
       let(:archive_example) { "fonts.zip" }
 
