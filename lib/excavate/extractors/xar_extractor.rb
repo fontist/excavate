@@ -24,10 +24,11 @@ module Excavate
       end
 
       def rename_payload(target)
-        payload_path = File.join(target, "Payload")
-        return unless File.exist?(payload_path)
+        Dir.glob(File.join(target, "**", "Payload")).each do |file|
+          next unless File.file?(file)
 
-        FileUtils.mv(payload_path, "#{payload_path}.cpio.gz")
+          FileUtils.mv(file, "#{file}.cpio.gz")
+        end
       end
     end
   end
