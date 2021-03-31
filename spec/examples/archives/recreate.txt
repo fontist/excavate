@@ -1,0 +1,9 @@
+== pkg
+
+mkdir Folder
+touch Folder/file.txt
+echo content > Folder/file.txt
+find Folder -depth | cpio -ov > Payload
+gzip Payload
+mv Payload.gz Payload
+xar -cf archive.pkg Payload

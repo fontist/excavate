@@ -21,6 +21,7 @@ module Excavate
             if entry.directory?
               FileUtils.mkdir_p(path)
             else
+              FileUtils.mkdir_p(File.dirname(path))
               File.write(path, file.read, mode: "wb")
             end
           end
@@ -34,6 +35,7 @@ module Excavate
             if entry.directory?
               FileUtils.mkdir_p(path)
             else
+              FileUtils.mkdir_p(File.dirname(path))
               File.write(path, entry.data, mode: "wb")
             end
           end
