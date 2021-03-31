@@ -1,4 +1,4 @@
-== pkg
+== archive.pkg
 
 mkdir Folder
 touch Folder/file.txt
@@ -7,3 +7,10 @@ find Folder -depth | cpio -ov > Payload
 gzip Payload
 mv Payload.gz Payload
 xar -cf archive.pkg Payload
+
+== folder_with_extension.zip
+
+mkdir Folder.zip
+touch Folder.zip/file.txt
+echo content > Folder.zip/file.txt
+zip -r folder_with_extension.zip Folder.zip

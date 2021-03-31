@@ -105,6 +105,8 @@ module Excavate
     end
 
     def archive?(file)
+      return false unless File.file?(file)
+
       ext = normalized_extension(file)
       TYPES.key?(ext)
     end
