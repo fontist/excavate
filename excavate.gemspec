@@ -27,7 +27,6 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_runtime_dependency "arr-pm", "~> 0.0"
-  spec.add_runtime_dependency "ffi-libarchive-binary", "~> 0.0"
   spec.add_runtime_dependency "libmspack", "~> 0.1"
   spec.add_runtime_dependency "ruby-ole", "~> 1.0"
   spec.add_runtime_dependency "rubyzip", "~> 2.3"
