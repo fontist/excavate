@@ -69,6 +69,19 @@ $ excavate path/to/archive.cab
 ----
 
 
+== Dependencies
+
+Depends on
+https://github.com/fontist/ffi-libarchive-binary[ffi-libarchive-binary] which
+has the following requirements:
+
+* zlib
+* Expat
+* OpenSSL (for Linux only)
+
+These dependencies are generally present on all systems.
+
+
 == Development
 
 We are following Sandi Metz's Rules for this gem, you can read the
