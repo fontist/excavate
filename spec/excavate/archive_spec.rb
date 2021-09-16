@@ -1,7 +1,9 @@
 RSpec.describe Excavate::Archive do
-  describe "#files" do
-    let(:archive) { File.expand_path("../examples/archives/#{archive_example}", __dir__) }
+  let(:archive) do
+    File.expand_path("../examples/archives/#{archive_example}", __dir__)
+  end
 
+  describe "#files" do
     shared_examples "yields filename" do |filename|
       it "yields files contained in archive" do
         Array.new.tap do |files|
@@ -139,6 +141,59 @@ RSpec.describe Excavate::Archive do
         let(:archive_example) { "folder_with_extension.zip" }
 
         include_examples "yields filename recursively", "file.txt"
+      end
+    end
+
+    context "particular file is passed" do
+      let(:archive_example) { "fonts.zip" }
+
+      it "yields only particular file" do
+        files = []
+        described_class.new(archive).files(files: ["Fonts/Marlett.ttf"]) do |f|
+          files << f
+        end
+
+        expect(files.size).to be 1
+        expect(files).to include(include("Marlett.ttf"))
+      end
+    end
+  end
+
+  describe "#extract" do
+    include_context "fresh work dir"
+
+    context "particular file is passed" do
+      let(:archive_example) { "several_files.zip" }
+
+      it "yields only specified file" do
+        files = described_class.new(archive).extract(files: ["file2"])
+
+        expect(files.size).to eq 1
+        expect(files.first).to end_with("file2")
+      end
+    end
+
+    context "particular file is passed in a nested archives" do
+      let(:archive_example) { "nested_archives.zip" }
+
+      it "yields only specified file" do
+        files = described_class.new(archive).extract(
+          files: ["several_files.zip/file2"],
+          recursive_packages: true,
+        )
+
+        expect(files.size).to eq 1
+        expect(files.first).to end_with("file2")
+      end
+    end
+
+    context "particular file is missing" do
+      let(:archive_example) { "several_files.zip" }
+
+      it "raises target-not-found error" do
+        expect do
+          described_class.new(archive).extract(files: ["file3"])
+        end.to raise_error(Excavate::TargetNotFoundError)
       end
     end
   end

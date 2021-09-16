@@ -68,6 +68,19 @@ If you'd like to skip extraction of nested archives, just use:
 $ excavate path/to/archive.cab
 ----
 
+To extract a particular file or files specify them as last arguments:
+
+[source,sh]
+----
+$ excavate --recursive archive.cab file1 dir/file2
+----
+
+Also `excavate` supports extraction from nested archives:
+
+[source,sh]
+----
+$ excavate --recursive archive.cab dir/nested.zip/file
+----
 
 == Dependencies
 

@@ -8,6 +8,13 @@ module Excavate
     STATUS_UNKNOWN_ERROR = 1
     STATUS_TARGET_EXISTS = 2
     STATUS_TARGET_NOT_EMPTY = 3
+    STATUS_TARGET_NOT_FOUND = 4
+
+    ERROR_TO_STATUS = {
+      TargetExistsError => STATUS_TARGET_EXISTS,
+      TargetNotEmptyError => STATUS_TARGET_NOT_EMPTY,
+      TargetNotFoundError => STATUS_TARGET_NOT_FOUND,
+    }.freeze
 
     def self.exit_on_failure?
       false
@@ -23,15 +30,19 @@ module Excavate
       super(args, config)
     end
 
-    desc "extract ARCHIVE", "Extract ARCHIVE to a new directory"
-    option :recursive, aliases: :r, type: :boolean, default: false, desc: "Also extract all nested archives."
-    def extract(archive)
-      target = Excavate::Archive.new(archive).extract(recursive_packages: options[:recursive])
-      success("Successfully extracted to #{File.basename(target)}/")
-    rescue TargetExistsError => e
-      error(e.message, STATUS_TARGET_EXISTS)
-    rescue TargetNotEmptyError => e
-      error(e.message, STATUS_TARGET_NOT_EMPTY)
+    desc "extract ARCHIVE [FILE...]",
+         "Extract FILE or all files from ARCHIVE to a new directory"
+    option :recursive, aliases: :r, type: :boolean, default: false,
+                       desc: "Also extract all nested archives."
+    def extract(archive, *files)
+      target = Excavate::Archive.new(archive).extract(
+        recursive_packages: options[:recursive],
+        files: files,
+      )
+
+      success("Successfully extracted to #{format_paths(target)}")
+    rescue Error => e
+      handle_error(e)
     end
     default_task :extract
 
@@ -42,9 +53,24 @@ module Excavate
       STATUS_SUCCESS
     end
 
+    def handle_error(exception)
+      status = ERROR_TO_STATUS[exception.class]
+      raise exception unless status
+
+      error(exception.message, status)
+    end
+
     def error(message, status)
       say(message, :red)
       status
+    end
+
+    def format_paths(path_or_paths)
+      paths = Array(path_or_paths).map do |x|
+        File.directory?(x) ? "#{File.basename(x)}/" : File.basename(x)
+      end
+
+      paths.join(", ")
     end
   end
 end

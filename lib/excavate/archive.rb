@@ -1,5 +1,8 @@
 module Excavate
   class Archive
+    INVALID_MEMORY_MESSAGE =
+      "invalid memory read at address=0x0000000000000000".freeze
+
     TYPES = { "cab" => Extractors::CabExtractor,
               "cpio" => Extractors::CpioExtractor,
               "exe" => Extractors::SevenZipExtractor,
@@ -14,9 +17,9 @@ module Excavate
       @archive = archive
     end
 
-    def files(recursive_packages: false)
+    def files(recursive_packages: false, files: [])
       target = Dir.mktmpdir
-      extract(target, recursive_packages: recursive_packages)
+      extract(target, recursive_packages: recursive_packages, files: files)
 
       all_files_in(target).map do |file|
         yield file
@@ -25,10 +28,71 @@ module Excavate
       FileUtils.rm_rf(target)
     end
 
-    def extract(target = nil, recursive_packages: false)
+    def extract(target = nil, recursive_packages: false, files: [])
+      if files.empty?
+        extract_all(target, recursive_packages: recursive_packages)
+      else
+        extract_particular_files(target, files,
+                                 recursive_packages: recursive_packages)
+      end
+    end
+
+    private
+
+    def extract_particular_files(target, files, recursive_packages: false)
+      tmp = Dir.mktmpdir
+      extract_all(tmp, recursive_packages: recursive_packages)
+      found_files = find_files(tmp, files)
+      copy_files(found_files, target || Dir.pwd)
+    ensure
+      FileUtils.rm_rf(tmp)
+    end
+
+    def copy_files(files, target)
+      files.map do |file|
+        FileUtils.mkdir_p(target)
+        target_path = File.join(target, File.basename(file))
+        ensure_not_exist(target_path)
+
+        FileUtils.cp(file, target_path)
+
+        target_path
+      end
+    end
+
+    def ensure_not_exist(path)
+      if File.exist?(path)
+        type = File.directory?(path) ? "directory" : "file"
+        raise(TargetExistsError,
+              "Target #{type} `#{File.basename(path)}` already exists.")
+      end
+    end
+
+    def find_files(source, files)
+      all_files = all_files_in(source)
+
+      files.map do |target_file|
+        found_file = all_files.find do |source_file|
+          file_matches?(source_file, target_file, source)
+        end
+
+        unless found_file
+          raise(TargetNotFoundError, "File `#{target_file}` not found.")
+        end
+
+        found_file
+      end
+    end
+
+    def file_matches?(source_file, target_file, source_dir)
+      base_path = source_file.sub(source_dir, "").sub(/^\//, "").sub(/^\\/, "")
+      base_path == target_file
+    end
+
+    def extract_all(target, recursive_packages: false)
       source = File.expand_path(@archive)
       target ||= default_target(source)
-      raise(TargetNotEmptyError, "Target directory `#{File.basename(target)}` is not empty.") unless Dir.empty?(target)
+      ensure_empty(target)
 
       if recursive_packages
         extract_recursively(source, target)
@@ -39,11 +103,16 @@ module Excavate
       target
     end
 
-    private
+    def ensure_empty(path)
+      unless Dir.empty?(path)
+        raise(TargetNotEmptyError,
+              "Target directory `#{File.basename(path)}` is not empty.")
+      end
+    end
 
     def default_target(source)
       target = File.expand_path(File.basename(source, ".*"))
-      raise(TargetExistsError, "Target directory `#{File.basename(target)}` already exists.") if File.exist?(target)
+      ensure_not_exist(target)
 
       FileUtils.mkdir(target)
 
@@ -63,11 +132,14 @@ module Excavate
     def extract_once(archive, target)
       extension = normalized_extension(archive)
       extractor_class = TYPES[extension]
-      raise(UnknownArchiveError, "Could not unarchive `#{archive}`.") unless extractor_class
+      unless extractor_class
+        raise(UnknownArchiveError, "Could not unarchive `#{archive}`.")
+      end
 
       extractor_class.new(archive).extract(target)
     rescue StandardError => e
-      raise unless extension == "exe" && e.message.start_with?("Invalid file format")
+      raise unless extension == "exe" &&
+        e.message.start_with?("Invalid file format")
 
       Extractors::CabExtractor.new(archive).extract(target)
     end
@@ -81,7 +153,7 @@ module Excavate
     rescue FFI::NullPointerError => e
       FileUtils.rmdir(target)
       raise unless normalized_extension(archive) == "exe" &&
-        e.message.start_with?("invalid memory read at address=0x0000000000000000")
+        e.message.start_with?(INVALID_MEMORY_MESSAGE)
     end
 
     def normalized_extension(file)
