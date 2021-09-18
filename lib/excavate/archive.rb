@@ -17,9 +17,10 @@ module Excavate
       @archive = archive
     end
 
-    def files(recursive_packages: false, files: [])
+    def files(recursive_packages: false, files: [], filter: nil)
       target = Dir.mktmpdir
-      extract(target, recursive_packages: recursive_packages, files: files)
+      extract(target, recursive_packages: recursive_packages,
+                      files: files, filter: filter)
 
       all_files_in(target).map do |file|
         yield file
@@ -28,12 +29,18 @@ module Excavate
       FileUtils.rm_rf(target)
     end
 
-    def extract(target = nil, recursive_packages: false, files: [])
-      if files.empty?
-        extract_all(target, recursive_packages: recursive_packages)
-      else
+    def extract(target = nil,
+                recursive_packages: false,
+                files: [],
+                filter: nil)
+      if files.size.positive?
         extract_particular_files(target, files,
                                  recursive_packages: recursive_packages)
+      elsif filter
+        extract_by_filter(target, filter,
+                          recursive_packages: recursive_packages)
+      else
+        extract_all(target, recursive_packages: recursive_packages)
       end
     end
 
@@ -85,8 +92,36 @@ module Excavate
     end
 
     def file_matches?(source_file, target_file, source_dir)
-      base_path = source_file.sub(source_dir, "").sub(/^\//, "").sub(/^\\/, "")
-      base_path == target_file
+      base_path(source_file, source_dir) == target_file
+    end
+
+    def base_path(path, prefix)
+      path.sub(prefix, "").sub(/^\//, "").sub(/^\\/, "")
+    end
+
+    def extract_by_filter(target, filter, recursive_packages: false)
+      tmp = Dir.mktmpdir
+      extract_all(tmp, recursive_packages: recursive_packages)
+      found_files = find_by_filter(tmp, filter)
+      copy_files(found_files, target || Dir.pwd)
+    end
+
+    def find_by_filter(source, filter)
+      all_files = all_files_in(source)
+
+      found_files = all_files.select do |source_file|
+        file_matches_filter?(source_file, filter, source)
+      end
+
+      if found_files.empty?
+        raise(TargetNotFoundError, "Filter `#{filter}` matched no file.")
+      end
+
+      found_files
+    end
+
+    def file_matches_filter?(source_file, filter, source_dir)
+      File.fnmatch?(filter, base_path(source_file, source_dir))
     end
 
     def extract_all(target, recursive_packages: false)
