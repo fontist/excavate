@@ -82,6 +82,13 @@ Also `excavate` supports extraction from nested archives:
 $ excavate --recursive archive.cab dir/nested.zip/file
 ----
 
+And filtering:
+
+[source,sh]
+----
+$ excavate archive.cab --filter "**/specialfile*.txt"
+----
+
 == Dependencies
 
 Depends on

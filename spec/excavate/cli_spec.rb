@@ -101,6 +101,24 @@ RSpec.describe Excavate::CLI do
         end.to output("File `missing_file` not found.\n").to_stdout
       end
     end
+
+    context "filter" do
+      let(:args) do
+        [spec_root.join("examples/archives/several_files.zip"),
+         "--filter", "*2"]
+      end
+
+      it "extracts the files" do
+        command
+        expect(File.exist?("file2")).to be true
+      end
+
+      it "prints target paths" do
+        expect do
+          command
+        end.to output("Successfully extracted to file2\n").to_stdout
+      end
+    end
   end
 
   def spec_root
