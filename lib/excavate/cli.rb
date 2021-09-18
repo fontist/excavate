@@ -34,10 +34,13 @@ module Excavate
          "Extract FILE or all files from ARCHIVE to a new directory"
     option :recursive, aliases: :r, type: :boolean, default: false,
                        desc: "Also extract all nested archives."
+    option :filter, type: :string,
+                    desc: "Filter by pattern (supports **, *, ?, etc)"
     def extract(archive, *files)
       target = Excavate::Archive.new(archive).extract(
         recursive_packages: options[:recursive],
         files: files,
+        filter: options[:filter],
       )
 
       success("Successfully extracted to #{format_paths(target)}")

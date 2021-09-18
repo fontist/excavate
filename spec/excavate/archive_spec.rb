@@ -157,6 +157,20 @@ RSpec.describe Excavate::Archive do
         expect(files).to include(include("Marlett.ttf"))
       end
     end
+
+    context "filter is passed" do
+      let(:archive_example) { "several_files.zip" }
+
+      it "yields only files matching the filter" do
+        files = []
+        described_class.new(archive).files(filter: "*2") do |f|
+          files << f
+        end
+
+        expect(files.size).to eq 1
+        expect(files.first).to end_with("file2")
+      end
+    end
   end
 
   describe "#extract" do
@@ -173,7 +187,7 @@ RSpec.describe Excavate::Archive do
       end
     end
 
-    context "particular file is passed in a nested archives" do
+    context "particular file is passed in a nested archive" do
       let(:archive_example) { "nested_archives.zip" }
 
       it "yields only specified file" do
@@ -194,6 +208,17 @@ RSpec.describe Excavate::Archive do
         expect do
           described_class.new(archive).extract(files: ["file3"])
         end.to raise_error(Excavate::TargetNotFoundError)
+      end
+    end
+
+    context "filter is passed" do
+      let(:archive_example) { "several_files.zip" }
+
+      it "extracts only files matching the filter" do
+        files = described_class.new(archive).extract(filter: "*2")
+
+        expect(files.size).to eq 1
+        expect(files.first).to end_with("file2")
       end
     end
   end
