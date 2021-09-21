@@ -15,6 +15,8 @@ module Excavate
 
         Ole::Storage.open(@archive) do |ole|
           children(ole).each do |file|
+            next if ole.file.directory?(file)
+
             filename = prepare_filename(file)
             path = File.join(target, filename)
             content = ole.file.read(file)
