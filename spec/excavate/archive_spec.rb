@@ -142,6 +142,12 @@ RSpec.describe Excavate::Archive do
 
         include_examples "yields filename recursively", "file.txt"
       end
+
+      context "directory" do
+        let(:archive_example) { "dir" }
+
+        include_examples "yields filename recursively", "Marlett.ttf"
+      end
     end
 
     context "particular file is passed" do

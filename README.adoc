@@ -61,6 +61,13 @@ end
 $ excavate --recursive path/to/archive.cab
 ----
 
+It supports recursive extraction of a directory containing archives:
+
+[source,sh]
+----
+$ excavate --recursive path/to/dir_with_archives
+----
+
 If you'd like to skip extraction of nested archives, just use:
 
 [source,sh]
