@@ -155,12 +155,24 @@ module Excavate
     end
 
     def extract_recursively(archive, target)
-      extract_once(archive, target)
+      if File.directory?(archive)
+        duplicate_dir(archive, target)
+      else
+        extract_once(archive, target)
+      end
 
       all_files_in(target).each do |file|
         next unless archive?(file)
 
         extract_and_replace(file)
+      end
+    end
+
+    def duplicate_dir(source, target)
+      Dir.chdir(source) do
+        (Dir.entries(".") - [".", ".."]).each do |entry|
+          FileUtils.cp_r(entry, target)
+        end
       end
     end
 
