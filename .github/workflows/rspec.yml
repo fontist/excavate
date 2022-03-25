@@ -2,7 +2,7 @@ name: rspec
 
 on:
   push:
-    branches: [ master, main ]
+    branches: [ main ]
   pull_request:
 
 jobs:
@@ -13,22 +13,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: [ '2.4', '2.5', '2.6', '2.7' ]
+        ruby: [ '2.4', '2.5', '2.6', '2.7', '3.0', '3.1' ]
         os: [ ubuntu-latest, windows-latest, macos-latest ]
         experimental: [ false ]
-        include:
-          - ruby: '3.0'
-            os: 'ubuntu-latest'
-            experimental: true
-          - ruby: '3.0'
-            os: 'windows-latest'
-            experimental: true
-          - ruby: '3.0'
-            os: 'macos-latest'
-            experimental: true
 
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v2
 
       - uses: ruby/setup-ruby@v1
         with:
