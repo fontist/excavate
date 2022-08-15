@@ -30,6 +30,6 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "libmspack", "~> 0.1"
   spec.add_runtime_dependency "ruby-ole", "~> 1.0"
   spec.add_runtime_dependency "rubyzip", "~> 2.3"
-  spec.add_runtime_dependency "seven_zip_ruby_ex", "~> 1.3"
+  spec.add_runtime_dependency "seven-zip", "~> 1.4"
   spec.add_runtime_dependency "thor", "~> 1.0"
 end
