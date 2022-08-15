@@ -33,7 +33,7 @@ jobs:
           fi
           echo "::set-output name=foreign_pr::${fpr}"
           echo "::set-output name=head_tag::${tag}"
-          
+
   build:
     name: Test on Ruby ${{ matrix.ruby }} ${{ matrix.os }}
     needs: prepare
