@@ -4,6 +4,7 @@ require_relative "lib/excavate/version"
 
 def add_dependecies(spec)
   spec.add_runtime_dependency "arr-pm", "~> 0.0"
+  spec.add_runtime_dependency "bundler", "~> 2.3", ">= 2.3.24"
   spec.add_runtime_dependency "ffi-libarchive-binary", "~> 0.3"
   spec.add_runtime_dependency "libmspack", "~> 0.1"
   spec.add_runtime_dependency "ruby-ole", "~> 1.0"
