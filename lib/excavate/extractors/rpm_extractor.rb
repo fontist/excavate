@@ -1,10 +1,11 @@
 require "arr-pm"
 
+H_MAGIC = "\x8e\xad\xe8\x01\x00\x00\x00\x00".force_encoding("BINARY")
+
 # fix for Ruby 3.0
-unless RPM::File::Header::HEADER_MAGIC == "\x8e\xad\xe8\x01\x00\x00\x00\x00".force_encoding("BINARY")
+unless RPM::File::Header::HEADER_MAGIC == H_MAGIC
   RPM::File::Header.send(:remove_const, "HEADER_MAGIC")
-  RPM::File::Header.const_set(:HEADER_MAGIC,
-                              "\x8e\xad\xe8\x01\x00\x00\x00\x00".force_encoding("BINARY"))
+  RPM::File::Header.const_set(:HEADER_MAGIC, H_MAGIC)
 end
 
 module Excavate
