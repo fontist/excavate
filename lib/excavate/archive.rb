@@ -17,14 +17,12 @@ module Excavate
       @archive = archive
     end
 
-    def files(recursive_packages: false, files: [], filter: nil)
+    def files(recursive_packages: false, files: [], filter: nil, &block)
       target = Dir.mktmpdir
       extract(target, recursive_packages: recursive_packages,
                       files: files, filter: filter)
 
-      all_files_in(target).map do |file|
-        yield file
-      end
+      all_files_in(target).map(&block)
     ensure
       FileUtils.rm_rf(target)
     end

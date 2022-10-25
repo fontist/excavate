@@ -5,7 +5,7 @@ RSpec.describe Excavate::CLI do
     include_context "fresh work dir"
 
     around do |example|
-      Excavate::Utils.silence_stream(STDOUT) do
+      Excavate::Utils.silence_stream($stdout) do
         example.run
       end
     end
@@ -20,14 +20,18 @@ RSpec.describe Excavate::CLI do
       end
 
       it "prints target path" do
-        expect { command }.to output("Successfully extracted to fonts/\n").to_stdout
+        expect do
+          command
+        end.to output("Successfully extracted to fonts/\n").to_stdout
       end
     end
 
     context "relative path" do
       let(:args) { ["fonts.cab"] }
 
-      before { FileUtils.cp(spec_root.join("examples/archives/fonts.cab"), ".") }
+      before do
+        FileUtils.cp(spec_root.join("examples/archives/fonts.cab"), ".")
+      end
 
       it "extracts anyway" do
         command
@@ -43,7 +47,9 @@ RSpec.describe Excavate::CLI do
       end
 
       it "prints error message" do
-        expect { command }.to output("Target directory `fonts` already exists.\n").to_stdout
+        expect do
+          command
+        end.to output("Target directory `fonts` already exists.\n").to_stdout
       end
     end
 

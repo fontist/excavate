@@ -19,7 +19,7 @@ module Excavate
 
       def open_cab(archive)
         decompressor = LibMsPack::CabDecompressor.new
-        cab = Utils.silence_stream(STDERR) do
+        cab = Utils.silence_stream($stderr) do
           decompressor.search(archive)
         end
 
