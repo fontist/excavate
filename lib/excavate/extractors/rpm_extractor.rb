@@ -3,7 +3,8 @@ require "arr-pm"
 # fix for Ruby 3.0
 unless RPM::File::Header::HEADER_MAGIC == "\x8e\xad\xe8\x01\x00\x00\x00\x00".force_encoding("BINARY")
   RPM::File::Header.send(:remove_const, "HEADER_MAGIC")
-  RPM::File::Header.const_set("HEADER_MAGIC", "\x8e\xad\xe8\x01\x00\x00\x00\x00".force_encoding("BINARY"))
+  RPM::File::Header.const_set(:HEADER_MAGIC,
+                              "\x8e\xad\xe8\x01\x00\x00\x00\x00".force_encoding("BINARY"))
 end
 
 module Excavate
@@ -25,7 +26,7 @@ module Excavate
         archive_format = tags[:payloadformat]
         compression_format = tags[:payloadcompressor] == "gzip" ? "gz" : tags[:payloadcompressor]
         basename = File.basename(archive, ".*")
-        filename = basename + "." + archive_format + "." + compression_format
+        filename = "#{basename}.#{archive_format}.#{compression_format}"
         File.join(dir, filename)
       end
     end
