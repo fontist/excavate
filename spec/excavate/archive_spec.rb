@@ -247,5 +247,22 @@ RSpec.describe Excavate::Archive do
         expect(files.first).to end_with("AndaleMo.TTF")
       end
     end
+
+    # Check that 7z archive with bcj filter applied
+    # https://www.mail-archive.com/xz-devel@tukaani.org/msg00370.html
+
+    context "file in 7z archive built with BCJ and LZMA1 filters" do
+      let(:archive_example) { "fonts_7z_with_bcj.exe" }
+
+      it "yields specified file" do
+        files = described_class.new(archive).extract(
+          files: ["test1.txt"],
+          recursive_packages: true,
+        )
+
+        expect(files.size).to eq 1
+        expect(files.first).to end_with("test1.txt")
+      end
+    end
   end
 end

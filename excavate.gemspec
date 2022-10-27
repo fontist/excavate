@@ -2,19 +2,7 @@
 
 require_relative "lib/excavate/version"
 
-def add_dependencies(spec)
-  spec.add_runtime_dependency "arr-pm", "~> 0.0"
-  spec.add_runtime_dependency "bundler", "~> 2.3", ">= 2.3.24"
-  spec.add_runtime_dependency "ffi-libarchive-binary", "~> 0.3"
-  spec.add_runtime_dependency "libmspack", "~> 0.1"
-  spec.add_runtime_dependency "ruby-ole", "~> 1.0"
-  spec.add_runtime_dependency "rubyzip", "~> 2.3"
-  spec.add_runtime_dependency "thor", "~> 1.0"
-
-  spec.add_development_dependency "rspec", "~> 3.0"
-  spec.add_development_dependency "rubocop", "~> 1.7"
-  spec.add_development_dependency "rubocop-performance", "~> 1.15"
-end
+# rubocop:disable Metrics/BlockLength
 
 Gem::Specification.new do |spec|
   spec.name          = "excavate"
@@ -43,6 +31,19 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  add_dependencies(spec)
+  spec.add_runtime_dependency "arr-pm", "~> 0.0"
+  spec.add_runtime_dependency "bundler", "~> 2.3", ">= 2.3.24"
+  spec.add_runtime_dependency "ffi-libarchive-binary", "~> 0.3"
+  spec.add_runtime_dependency "libmspack", "~> 0.1"
+  spec.add_runtime_dependency "ruby-ole", "~> 1.0"
+  spec.add_runtime_dependency "rubyzip", "~> 2.3"
+  spec.add_runtime_dependency "seven-zip", "~> 1.4"
+  spec.add_runtime_dependency "thor", "~> 1.0"
+
+  spec.add_development_dependency "rspec", "~> 3.0"
+  spec.add_development_dependency "rubocop", "~> 1.7"
+  spec.add_development_dependency "rubocop-performance", "~> 1.15"
   spec.metadata["rubygems_mfa_required"] = "false"
 end
+
+# rubocop:enable Metrics/BlockLength

@@ -184,6 +184,12 @@ module Excavate
       FileUtils.cp(archive, target)
     end
 
+    def may_be_nested_cab?(extension, message)
+      extension == "exe" &&
+        message.start_with?("Invalid file format",
+                            "Unrecognized archive format")
+    end
+
     def extract_once(archive, target)
       extension = normalized_extension(archive)
       extractor_class = TYPES[extension]
@@ -193,8 +199,7 @@ module Excavate
 
       extractor_class.new(archive).extract(target)
     rescue StandardError => e
-      raise unless extension == "exe" &&
-        e.message.start_with?("Invalid file format", "Unrecognized archive format")
+      raise unless may_be_nested_cab?(extension, e.message)
 
       Extractors::CabExtractor.new(archive).extract(target)
     end
