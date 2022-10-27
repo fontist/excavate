@@ -194,7 +194,7 @@ module Excavate
       extractor_class.new(archive).extract(target)
     rescue StandardError => e
       raise unless extension == "exe" &&
-        e.message.start_with?("Invalid file format")
+        e.message.start_with?("Invalid file format", "Unrecognized archive format")
 
       Extractors::CabExtractor.new(archive).extract(target)
     end
