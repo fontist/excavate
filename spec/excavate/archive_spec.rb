@@ -233,5 +233,19 @@ RSpec.describe Excavate::Archive do
         expect(files.first).to end_with("file2")
       end
     end
+
+    context "file in cab archive nested in exe file" do
+      let(:archive_example) { "fonts_nested_cab.exe" }
+
+      it "yields specified file" do
+        files = described_class.new(archive).extract(
+          filter: "*.TTF",
+          recursive_packages: true,
+        )
+
+        expect(files.size).to eq 1
+        expect(files.first).to end_with("AndaleMo.TTF")
+      end
+    end
   end
 end
