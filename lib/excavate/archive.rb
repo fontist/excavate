@@ -240,6 +240,8 @@ module Excavate
       return false unless File.file?(file)
 
       ext = normalized_extension(file)
+      return false if ext == "gz" && FileMagic.detect(file) != :gzip
+
       TYPES.key?(ext)
     end
   end

@@ -113,6 +113,12 @@ RSpec.describe Excavate::Archive do
         include_examples "yields filename recursively", "Marlett.ttf"
       end
 
+      context "gz extension but not really a gzip" do
+        let(:archive_example) { "not_really_gzip.txt.gz" }
+
+        include_examples "yields filename recursively", "not_really_gzip.txt.gz"
+      end
+
       context "ole" do
         let(:archive_example) { "fonts.msi" }
 
