@@ -11,69 +11,69 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BUNDLER_VER: 2.3.24
+  BUNDLER_VER: 2.4.22
 # Forcing bundler version to ensure that it is consistent everywhere and
 # does not cause bundler gem reinstalls
-# bundler/rubygems 2.3.22 is a minimal requirement to support gnu/musl differentiation
-# https://github.com/rubygems/rubygems/pull/4488
 
 jobs:
+  prepare:
+    uses: metanorma/ci/.github/workflows/prepare-rake.yml@main
+
   test:
-    name: Test on Ruby ${{ matrix.ruby }} ${{ matrix.os }}
+    name: Test on Ruby ${{ matrix.ruby.version }} ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    continue-on-error: false
+
+    needs: prepare
+    if: needs.prepare.outputs.push-for-tag != 'true'
+
+    continue-on-error: ${{ matrix.ruby.experimental }}
     strategy:
       fail-fast: false
-      matrix:
-        ruby: [ '2.7', '3.0', '3.1' ]
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
+      max-parallel: 5
+      matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: ${{ matrix.ruby }}
+          ruby-version: ${{ matrix.ruby.version }}
+          rubygems: ${{ matrix.ruby.rubygems }}
           bundler: ${{ env.BUNDLER_VER }}
           bundler-cache: true
 
       - run: bundle exec rspec
 
   metanorma:
-    name: Test with Metanorma on Ruby ${{ matrix.ruby }} ${{ matrix.os }}
+    name: Test with Metanorma on Ruby ${{ matrix.ruby.version }} ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    continue-on-error: false
+
+    needs: prepare
+    if: needs.prepare.outputs.push-for-tag != 'true'
+
+    continue-on-error: ${{ matrix.ruby.experimental }}
+
     strategy:
       fail-fast: false
-      matrix:
-        ruby: [ '2.7', '3.0', '3.1' ]
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
+      matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
+
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: metanorma/metanorma
 
       - uses: metanorma/metanorma-build-scripts/inkscape-setup-action@main
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           path: "excavate"
 
       - run: 'echo ''gem "excavate", path: "./excavate"'' > Gemfile.devel'
 
-      # https://github.com/rubygems/rubygems/issues/5160
-      - if: matrix.ruby == '3.0'
-        uses: ruby/setup-ruby@v1
+      - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: ${{ matrix.ruby }}
-          bundler-cache: true
-          bundler: ${{ env.BUNDLER_VER }}
-          rubygems: latest
-
-      - if: matrix.ruby != '3.0'
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ${{ matrix.ruby }}
+          ruby-version: ${{ matrix.ruby.version }}
+          rubygems: ${{ matrix.ruby.rubygems }}
           bundler: ${{ env.BUNDLER_VER }}
           bundler-cache: true
 
@@ -85,7 +85,7 @@ jobs:
     runs-on: ubuntu-latest
     if: contains(github.ref, 'refs/tags/v')
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: cadwallion/publish-rubygems-action@master
         env:
