@@ -40,9 +40,13 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "seven-zip", "~> 1.4"
   spec.add_runtime_dependency "thor", "~> 1.0"
 
+  # Workaround for https://github.com/metanorma/ruby-libmspack/issues/2
+  spec.add_development_dependency "ffi-compiler2", "= 2.0.1"
+
   spec.add_development_dependency "rspec", "~> 3.0"
   spec.add_development_dependency "rubocop", "~> 1.7"
   spec.add_development_dependency "rubocop-performance", "~> 1.15"
+
   spec.metadata["rubygems_mfa_required"] = "false"
 end
 
