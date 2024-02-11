@@ -66,16 +66,23 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          path: "excavate"
-
-      - run: 'echo ''gem "excavate", path: "./excavate"'' > Gemfile.devel'
+          path: excavate
 
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby.version }}
           rubygems: ${{ matrix.ruby.rubygems }}
           bundler: ${{ env.BUNDLER_VER }}
-          bundler-cache: true
+          bundler-cache: false
+
+      - name: Install excavate from source
+        run: |
+          cd excavate
+          bundle install
+          bundle exec rake install
+
+      - name: Install metanorma
+        run: bundle install
 
       - run: bundle exec rake
 
