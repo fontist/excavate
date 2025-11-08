@@ -1,9 +1,12 @@
 name: post-rake
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: 
+    workflows:
     - rake
     - rake-metanorma
     types:
