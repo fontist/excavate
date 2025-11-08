@@ -8,6 +8,7 @@ inherit_from:
 AllCops:
   Exclude:
     - 'lib/excavate/extractors/cpio/cpio_old_format.rb'
+    - 'vendor/**/*'
 
 plugins:
   - rubocop-performance
