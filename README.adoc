@@ -1,28 +1,101 @@
+= Excavate: Extraction of nested archives
+
 image:https://img.shields.io/gem/v/excavate.svg["Gem Version", link="https://rubygems.org/gems/excavate"]
 image:https://codeclimate.com/github/fontist/excavate/badges/gpa.svg["Code Climate", link="https://codeclimate.com/github/fontist/excavate"]
-image:https://github.com/fontist/excavate/workflows/test-and-release/badge.svg["Build Status", link="https://github.com/fontist/excavate/actions?workflow=test-and-release"]
+image:https://github.com/fontist/excavate/workflows/rake/badge.svg["Build Status", link="https://github.com/fontist/excavate/actions?workflow=rake"]
 
-= Excavate: Ruby gem to extract nested archives
+== Purpose
 
-Extract nested archives with a single command.
+Excavate is a Ruby gem that provides a unified interface for extracting
+nested archives across multiple compression and archive formats. The gem
+enables recursive extraction of archives within archives, making it ideal for
+processing complex software distributions, font packages, and other nested
+archive scenarios.
 
-== Supported Formats
+== Features
 
-Excavate supports the following archive formats:
+* <<basic-extraction,Basic archive extraction>>
+* <<recursive-extraction,Recursive extraction of nested archives>>
+* <<selective-extraction,Selective file extraction>>
+* <<filter-extraction,Filter-based extraction>>
+* <<cli-interface,Command-line interface>>
+* <<supported-formats,Supported archive formats>>
 
-* CAB (`.cab`, `.exe` with CAB)
-* CPIO (`.cpio`)
-* GZIP (`.gz`)
-* MSI (`.msi`)
-* RPM (`.rpm`)
-* 7-Zip (`.7z`, `.exe` with 7z)
-* TAR (`.tar`)
-* XAR (`.pkg`)
-* XZ (`.xz`, `.tar.xz`)
-* ZIP (`.zip`)
+== Architecture
 
-Recursive extraction allows nested archives to be extracted automatically.
+Excavate follows a clean object-oriented architecture with clear separation of
+concerns:
 
+.Excavate architecture overview
+----
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│                     Excavate::Archive                       │
+│           (Facade providing unified interface)              │
+│                                                             │
+└───────────────────┬─────────────────────────────────────────┘
+                    │
+                    │ delegates to
+                    │
+    ┌───────────────┴───────────────┐
+    │                               │
+    │    Format Type Registry       │
+    │    (TYPES hash mapping)       │
+    │                               │
+    └───────────────┬───────────────┘
+                    │
+                    │ instantiates
+                    │
+    ┌───────────────┴───────────────────────────────────┐
+    │                                                   │
+    │           Extractors::Extractor                   │
+    │           (Abstract base class)                   │
+    │                                                   │
+    └───────────────┬───────────────────────────────────┘
+                    │
+                    │ specialized by
+                    │
+    ┌───────────────┴───────────────────────────┐
+    │                                           │
+    ├─ CabExtractor    ├─ RpmExtractor         │
+    ├─ CpioExtractor   ├─ SevenZipExtractor    │
+    ├─ GzipExtractor   ├─ TarExtractor         │
+    ├─ OleExtractor    ├─ XarExtractor         │
+    ├─ XzExtractor     ├─ ZipExtractor         │
+    │                                           │
+    └───────────────────────────────────────────┘
+----
+
+.Data flow for archive extraction
+----
+User Request
+    │
+    ├── Archive.new(file_path)
+    │       │
+    │       ├── Detect format from extension
+    │       │
+    │       └── Select appropriate Extractor
+    │
+    ├── Archive#extract(target_dir)
+    │       │
+    │       ├── Create target directory
+    │       │
+    │       ├── Extractor#extract(target)
+    │       │       │
+    │       │       └── Format-specific extraction
+    │       │
+    │       └── [Optional] Recursive extraction
+    │               │
+    │               └── Repeat for nested archives
+    │
+    └── Return: Extracted files
+----
+
+The architecture follows these principles:
+
+* **Single Responsibility**: Each extractor handles one format
+* **Open/Closed**: New formats can be added without modifying existing code
+* **Dependency Inversion**: Archive class depends on Extractor abstraction
 
 == Installation
 
@@ -37,159 +110,482 @@ And then execute:
 
 [source,sh]
 ----
-$ bundle install
+bundle install
 ----
 
 Or install it yourself as:
 
 [source,sh]
 ----
-$ gem install excavate
+gem install excavate
 ----
 
+[[supported-formats]]
+== Supported formats
 
-== Usage
+Excavate supports the following archive and compression formats:
 
-To extract an archive containing other archives inside:
+* CAB (`.cab`, `.exe` with CAB)
+* CPIO (`.cpio`)
+* GZIP (`.gz`)
+* MSI (`.msi`)
+* RPM (`.rpm`)
+* 7-Zip (`.7z`, `.exe` with 7z)
+* TAR (`.tar`)
+* XAR (`.pkg`)
+* XZ (`.xz`, `.tar.xz`)
+* ZIP (`.zip`)
+
+All formats support recursive extraction for nested archives.
+
+[[basic-extraction]]
+== Basic extraction
+
+=== General
+
+This feature provides the fundamental capability to extract archives to a
+target directory. It is the core functionality of Excavate and is used as the
+foundation for all other extraction features.
+
+=== Syntax
 
 [source,ruby]
 ----
-target = Dir.mktmpdir
-Excavate::Archive.new("path/to/archive.cab").extract(target, recursive_packages: true)
+Excavate::Archive.new(archive_path).extract(target_directory) <1> <2>
 ----
+<1> `archive_path` - Path to the archive file to extract
+<2> `target_directory` - Directory where files will be extracted (optional)
 
-To extract an XZ compressed archive:
+Where,
 
+`archive_path`:: (required) Path to the archive file to extract. Can be an
+absolute or relative path.
+`target_directory`:: (optional) Target directory for extraction. If omitted, a
+directory with the archive's base name will be created in the current directory.
+
+=== Usage example
+
+.Extracting a ZIP archive to a specific directory
+[example]
+====
 [source,ruby]
 ----
-target = Dir.mktmpdir
-Excavate::Archive.new("path/to/archive.tar.xz").extract(target)
-----
+require "excavate"
+require "tmpdir"
 
-The same but allowing to choose only necessary files inside:
-
-[source,ruby]
-----
+# Create a temporary directory for extraction
 target = Dir.mktmpdir
-Excavate::Archive.new("path/to/archive.cab").files(recursive_packages: true) do |path|
-  FileUtils.mv(path, target) if path.end_with?(".txt")
+
+# Extract the archive
+Excavate::Archive.new("fonts.zip").extract(target)
+
+# List extracted files
+Dir.glob(File.join(target, "**", "*")).each do |file|
+  puts file if File.file?(file)
 end
 ----
 
+This example extracts a ZIP archive to a temporary directory and lists all
+extracted files.
+====
 
-== CLI
+.Extracting with automatic target directory creation
+[example]
+====
+[source,ruby]
+----
+require "excavate"
 
-`excavate` can be used via command line. To extract an archive including the nested ones:
+# Extract will create a directory named "fonts" in current directory
+Excavate::Archive.new("fonts.zip").extract
+
+# Files are now in ./fonts/
+----
+
+When no target is specified, Excavate creates a directory with the archive's
+base name (without extension) in the current working directory.
+====
+
+[[recursive-extraction]]
+== Recursive extraction
+
+=== General
+
+This feature enables automatic extraction of nested archives. When an archive
+contains other archives, Excavate can recursively extract them all in a single
+operation. This is particularly useful for complex software distributions that
+package multiple archives together.
+
+=== Syntax
+
+[source,ruby]
+----
+Excavate::Archive.new(archive_path).extract(
+  target_directory,
+  recursive_packages: true <1>
+)
+----
+<1> Enable recursive extraction of nested archives
+
+Where,
+
+`recursive_packages`:: (optional) Boolean flag to enable recursive extraction.
+When `true`, archives found within the extracted files are automatically
+extracted. Default is `false`.
+
+=== Usage example
+
+.Recursively extracting nested archives
+[example]
+====
+[source,ruby]
+----
+require "excavate"
+require "tmpdir"
+
+target = Dir.mktmpdir
+
+# Extract an MSI file that contains CAB archives
+Excavate::Archive.new("fonts.msi").extract(
+  target,
+  recursive_packages: true
+)
+
+# All nested CAB files are automatically extracted
+# Final structure contains only the font files
+----
+
+This example shows extraction of an MSI installer that contains nested CAB
+archives. With `recursive_packages: true`, both the MSI and all contained CAB
+files are automatically extracted.
+====
+
+.Processing files during recursive extraction
+[example]
+====
+[source,ruby]
+----
+require "excavate"
+
+fonts = []
+
+Excavate::Archive.new("fonts.tar.gz").files(
+  recursive_packages: true
+) do |file|
+  fonts << file if file.end_with?(".ttf", ".otf")
+end
+
+puts "Found #{fonts.size} font files"
+----
+
+The `files` method with `recursive_packages: true` processes each extracted
+file through a block, allowing selective collection of specific file types.
+====
+
+[[selective-extraction]]
+== Selective extraction
+
+=== General
+
+This feature allows extraction of specific files from an archive without
+extracting the entire contents. It is useful when working with large archives
+where only certain files are needed.
+
+=== Syntax
+
+[source,ruby]
+----
+Excavate::Archive.new(archive_path).extract(
+  target_directory,
+  files: [file1, file2, ...] <1>
+)
+----
+<1> Array of specific file paths to extract from the archive
+
+Where,
+
+`files`:: (optional) Array of file paths to extract. Paths should match the
+structure within the archive. If a file is not found, a `TargetNotFoundError`
+is raised.
+
+=== Usage example
+
+.Extracting specific files from an archive
+[example]
+====
+[source,ruby]
+----
+require "excavate"
+
+target = "/tmp/extracted"
+
+# Extract only specific font files
+files = Excavate::Archive.new("fonts.zip").extract(
+  target,
+  files: ["Fonts/Arial.ttf", "Fonts/Verdana.ttf"]
+)
+
+puts "Extracted #{files.size} files:"
+files.each { |f| puts "  - #{File.basename(f)}" }
+----
+
+This extracts only the specified files, even though the archive may contain
+many more files.
+====
+
+.Extracting files from nested archives
+[example]
+====
+[source,ruby]
+----
+require "excavate"
+
+# Extract a specific file from a nested archive
+# Path format: nested.zip/inner_file
+files = Excavate::Archive.new("outer.zip").extract(
+  "/tmp/out",
+  files: ["nested.zip/important.txt"],
+  recursive_packages: true
+)
+
+# The file from the nested archive is extracted
+----
+
+When combined with `recursive_packages: true`, you can specify paths through
+nested archives using the format `archive.zip/path/to/file`.
+====
+
+[[filter-extraction]]
+== Filter-based extraction
+
+=== General
+
+This feature provides pattern-based file selection for extraction. Instead of
+specifying exact file paths, you can use glob patterns to match multiple files,
+making it ideal for extracting files by type or naming convention.
+
+=== Syntax
+
+[source,ruby]
+----
+Excavate::Archive.new(archive_path).extract(
+  target_directory,
+  filter: "pattern" <1>
+)
+----
+<1> Glob pattern to match files for extraction
+
+Where,
+
+`filter`:: (optional) Glob pattern string to match files. Supports standard
+glob syntax including `*` (any characters), `**` (any directories), and
+character classes. If no files match, a `TargetNotFoundError` is raised.
+
+=== Usage example
+
+.Extracting all files of a specific type
+[example]
+====
+[source,ruby]
+----
+require "excavate"
+
+# Extract only TrueType fonts from any directory
+files = Excavate::Archive.new("fonts.zip").extract(
+  "/tmp/fonts",
+  filter: "**/*.ttf"
+)
+
+puts "Extracted #{files.size} TrueType font files"
+----
+
+The pattern `**/*.ttf` matches all `.ttf` files in any subdirectory within the
+archive.
+====
+
+.Extracting files with complex patterns
+[example]
+====
+[source,ruby]
+----
+require "excavate"
+
+# Extract configuration files from specific directories
+files = Excavate::Archive.new("config.tar.gz").extract(
+  "/tmp/conf",
+  filter: "etc/**/*.{conf,cfg}"
+)
+
+# Extracts .conf and .cfg files only from the 'etc' directory tree
+----
+
+Complex patterns can use brace expansion to match multiple extensions or
+patterns.
+====
+
+[[cli-interface]]
+== Command-line interface
+
+=== General
+
+Excavate provides a command-line tool for extracting archives directly from the
+shell. The CLI supports all the same features as the Ruby API, making it
+suitable for shell scripts and interactive use.
+
+=== Syntax
 
 [source,sh]
 ----
-$ excavate --recursive path/to/archive.cab
+excavate [OPTIONS] ARCHIVE [FILES...] <1> <2> <3>
 ----
+<1> Command options for controlling extraction behavior
+<2> Path to the archive file
+<3> Optional list of specific files to extract
 
-It supports recursive extraction of a directory containing archives:
+Where,
 
+`--recursive`:: Enable recursive extraction of nested archives
+`--filter PATTERN`:: Extract only files matching the glob pattern
+`ARCHIVE`:: Path to the archive file to extract
+`FILES...`:: Optional list of specific file paths to extract
+
+=== Usage example
+
+.Basic command-line extraction
+[example]
+====
 [source,sh]
 ----
-$ excavate --recursive path/to/dir_with_archives
+# Extract archive to a directory with the archive's base name
+excavate fonts.zip
+
+# Extract with recursive nested archive processing
+excavate --recursive application.msi
+
+# Extract from a directory of archives
+excavate --recursive archive_directory/
 ----
 
-If you'd like to skip extraction of nested archives, just use:
+Basic extraction creates a directory named after the archive (without extension)
+in the current directory.
+====
 
+.Selective extraction via CLI
+[example]
+====
 [source,sh]
 ----
-$ excavate path/to/archive.cab
+# Extract specific files
+excavate fonts.zip Fonts/Arial.ttf Fonts/Verdana.ttf
+
+# Extract files matching a pattern
+excavate --filter "**/*.ttf" fonts.zip
+
+# Extract from nested archives
+excavate --recursive outer.zip nested.zip/file.txt
 ----
 
-To extract a particular file or files specify them as last arguments:
+The CLI supports the same selective extraction features as the Ruby API.
+====
 
+.Processing XZ compressed archives
+[example]
+====
 [source,sh]
 ----
-$ excavate --recursive archive.cab file1 dir/file2
+# Extract TAR.XZ archive
+excavate wine-10.18.tar.xz
+
+# Extract XZ with recursive processing
+excavate --recursive package.tar.xz
+
+# Extract specific files from XZ archive
+excavate package.tar.xz --filter "*.conf"
 ----
 
-Also `excavate` supports extraction from nested archives:
-
-[source,sh]
-----
-$ excavate --recursive archive.cab dir/nested.zip/file
-----
-
-And filtering:
-
-[source,sh]
-----
-$ excavate archive.cab --filter "**/specialfile*.txt"
-----
-
-For XZ compressed archives:
-
-[source,sh]
-----
-$ excavate archive.tar.xz
-----
+XZ compressed archives (both `.xz` and `.tar.xz`) are fully supported through
+the command-line interface.
+====
 
 == Dependencies
 
-Depends on
-https://github.com/fontist/ffi-libarchive-binary[ffi-libarchive-binary] which
-has the following requirements:
+Excavate depends on the following system libraries through the
+https://github.com/fontist/ffi-libarchive-binary[ffi-libarchive-binary] gem:
 
 * zlib
 * Expat
 * OpenSSL (for Linux only)
 
-These dependencies are generally present on all systems.
-
+These dependencies are generally present on all systems and require no special
+installation steps.
 
 == Development
 
-We are following Sandi Metz's Rules for this gem, you can read the
-http://robots.thoughtbot.com/post/50655960596/sandi-metz-rules-for-developers[description of the rules here].
-All new code should follow these
-rules. If you make changes in a pre-existing file that violates these rules you
-should fix the violations as part of your contribution.
+=== General
 
+When contributing to Excavate, follow these development guidelines to maintain
+code quality and consistency.
+
+=== Coding standards
+
+We follow Sandi Metz's Rules for this gem. You can read the
+http://robots.thoughtbot.com/post/50655960596/sandi-metz-rules-for-developers[description of the rules here].
+All new code should follow these rules. If you make changes in a pre-existing
+file that violates these rules, you should fix the violations as part of your
+contribution.
+
+=== Testing
+
+Run the test suite with:
+
+[source,sh]
+----
+bundle exec rspec
+----
+
+Ensure all tests pass before submitting a pull request.
 
 == Releasing
 
-Releasing is done automatically with GitHub Action. Just bump and tag with `gem-release`.
+Releasing is done automatically with GitHub Actions. Just bump and tag with
+`gem-release`.
 
 For a patch release (0.0.x) use:
 
-[source,ruby]
+[source,sh]
 ----
 gem bump --version patch --tag --push
 ----
 
 For a minor release (0.x.0) use:
 
-[source,ruby]
+[source,sh]
 ----
 gem bump --version minor --tag --push
 ----
 
-
 == Contributing
 
 First, thank you for contributing! We love pull requests from everyone. By
-participating in this project, you hereby grant https://www.ribose.com[Ribose Inc.] the
-right to grant or transfer an unlimited number of non exclusive licenses or
-sub-licenses to third parties, under the copyright covering the contribution
-to use the contribution by all means.
+participating in this project, you hereby grant
+https://www.ribose.com[Ribose Inc.] the right to grant or transfer an unlimited
+number of non exclusive licenses or sub-licenses to third parties, under the
+copyright covering the contribution to use the contribution by all means.
 
 Here are a few technical guidelines to follow:
 
-1. Open an https://github.com/fontist/excavate/issues[issue] to discuss a new feature.
-1. Write tests to support your new feature.
-1. Make sure the entire test suite passes locally and on CI.
-1. Open a Pull Request.
-1. https://github.com/thoughtbot/guides/tree/master/protocol/git#write-a-feature[Squash your commits]
-  after receiving feedback.
-1. Party!
-
+. Open an https://github.com/fontist/excavate/issues[issue] to discuss a new
+feature.
+. Write tests to support your new feature.
+. Make sure the entire test suite passes locally and on CI.
+. Open a Pull Request.
+. https://github.com/thoughtbot/guides/tree/master/protocol/git#write-a-feature[Squash your commits]
+after receiving feedback.
+. Party!
 
 == License
 
 This gem is distributed with a BSD 3-Clause license.
 
-This gem is developed, maintained and funded by https://www.ribose.com/[Ribose Inc.]
+This gem is developed, maintained and funded by
+https://www.ribose.com/[Ribose Inc.]
