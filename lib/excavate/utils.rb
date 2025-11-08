@@ -4,7 +4,7 @@ module Excavate
 
     def silence_stream(stream)
       old_stream = stream.dup
-      stream.reopen(RbConfig::CONFIG["host_os"] =~ /mswin|mingw/ ? "NUL:" : "/dev/null") # rubocop:disable Performance/RegexpMatch, Metrics/LineLength
+      stream.reopen(/mswin|mingw/.match?(RbConfig::CONFIG["host_os"]) ? File::NULL : File::NULL)
       stream.sync = true
       yield
     ensure
