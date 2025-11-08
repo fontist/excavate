@@ -50,7 +50,7 @@ module Excavate
           name.gsub!(/^.*(\\|\/)/, "")
 
           # Strip out the non-ascii character
-          name.gsub!(/[^0-9A-Za-z.\-]/, "_")
+          name.gsub!(/[^0-9A-Za-z.-]/, "_")
         end
       end
 
