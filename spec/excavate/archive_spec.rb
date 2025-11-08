@@ -88,6 +88,12 @@ RSpec.describe Excavate::Archive do
       include_examples "yields filename", "Payload"
     end
 
+    context "xz" do
+      let(:archive_example) { "test.tar.xz" }
+
+      include_examples "yields filename", "test_xz_content.txt"
+    end
+
     context "zip" do
       let(:archive_example) { "fonts.zip" }
 
@@ -135,6 +141,12 @@ RSpec.describe Excavate::Archive do
         let(:archive_example) { "archive.pkg" }
 
         include_examples "yields filename recursively", "file.txt"
+      end
+
+      context "xz" do
+        let(:archive_example) { "test.tar.xz" }
+
+        include_examples "yields filename recursively", "test_xz_content.txt"
       end
 
       context "failing subarchive" do

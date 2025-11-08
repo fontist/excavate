@@ -6,6 +6,23 @@ image:https://github.com/fontist/excavate/workflows/test-and-release/badge.svg["
 
 Extract nested archives with a single command.
 
+== Supported Formats
+
+Excavate supports the following archive formats:
+
+* CAB (`.cab`, `.exe` with CAB)
+* CPIO (`.cpio`)
+* GZIP (`.gz`)
+* MSI (`.msi`)
+* RPM (`.rpm`)
+* 7-Zip (`.7z`, `.exe` with 7z)
+* TAR (`.tar`)
+* XAR (`.pkg`)
+* XZ (`.xz`, `.tar.xz`)
+* ZIP (`.zip`)
+
+Recursive extraction allows nested archives to be extracted automatically.
+
 
 == Installation
 
@@ -39,6 +56,14 @@ To extract an archive containing other archives inside:
 ----
 target = Dir.mktmpdir
 Excavate::Archive.new("path/to/archive.cab").extract(target, recursive_packages: true)
+----
+
+To extract an XZ compressed archive:
+
+[source,ruby]
+----
+target = Dir.mktmpdir
+Excavate::Archive.new("path/to/archive.tar.xz").extract(target)
 ----
 
 The same but allowing to choose only necessary files inside:
@@ -94,6 +119,13 @@ And filtering:
 [source,sh]
 ----
 $ excavate archive.cab --filter "**/specialfile*.txt"
+----
+
+For XZ compressed archives:
+
+[source,sh]
+----
+$ excavate archive.tar.xz
 ----
 
 == Dependencies

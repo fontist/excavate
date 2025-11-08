@@ -8,9 +8,10 @@ module Excavate
               "exe" => Extractors::SevenZipExtractor,
               "gz" => Extractors::GzipExtractor,
               "msi" => Extractors::OleExtractor,
+              "pkg" => Extractors::XarExtractor,
               "rpm" => Extractors::RpmExtractor,
               "tar" => Extractors::TarExtractor,
-              "pkg" => Extractors::XarExtractor,
+              "xz" => Extractors::XzExtractor,
               "zip" => Extractors::ZipExtractor }.freeze
 
     def initialize(archive)
