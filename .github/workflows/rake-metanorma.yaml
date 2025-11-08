@@ -44,9 +44,9 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          path: "fontist"
+          path: "excavate"
 
-      - run: 'echo ''gem "fontist", path: "./fontist"'' > Gemfile.devel'
+      - run: 'echo ''gem "excavate", path: "./excavate"'' > Gemfile.devel'
 
       - uses: ruby/setup-ruby@v1
         with:
