@@ -18,7 +18,7 @@ env:
   # does not cause bundler gem reinstalls
   # bundler/rubygems 2.3.22 is a minimal requirement to support gnu/musl differentiation
   # https://github.com/rubygems/rubygems/pull/4488
-  BUNDLER_VER: 2.3.24
+  BUNDLER_VER: latest
 
 jobs:
   prepare:
