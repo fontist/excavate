@@ -32,7 +32,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "arr-pm", "~> 0.0"
-  spec.add_dependency "bundler", "~> 2.3", ">= 2.3.24"
+  # spec.add_dependency "bundler", "~> 2", ">= 2.3.24"
   # Workaround for https://github.com/metanorma/ruby-libmspack/issues/2
   spec.add_dependency "ffi-compiler2", ">= 2.2.2"
   spec.add_dependency "ffi-libarchive-binary", "~> 0.3"
