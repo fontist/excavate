@@ -35,7 +35,7 @@ Gem::Specification.new do |spec|
   # spec.add_dependency "bundler", "~> 2", ">= 2.3.24"
   # Workaround for https://github.com/metanorma/ruby-libmspack/issues/2
   spec.add_dependency "ffi-compiler2", ">= 2.2.2"
-  spec.add_dependency "ffi-libarchive-binary", "~> 0.3"
+  spec.add_dependency "ffi-libarchive-binary", "~> 0.4", ">= 0.4.2"
   spec.add_dependency "libmspack", "~> 0.1"
   spec.add_dependency "ruby-ole", "~> 1.0"
   spec.add_dependency "rubyzip", "~> 2.3"
