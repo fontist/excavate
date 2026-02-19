@@ -1,7 +1,14 @@
-require "ole/storage"
+# frozen_string_literal: true
+
+require "omnizip"
+require "omnizip/formats/ole"
+require_relative "../file_magic"
 
 module Excavate
   module Extractors
+    # Extractor for OLE compound documents (MSI, DOC, XLS, PPT, etc.)
+    #
+    # Uses Omnizip's OLE format support for extraction.
     class OleExtractor < Extractor
       def extract(target)
         do_extract(target)
@@ -13,20 +20,18 @@ module Excavate
       def do_extract(target)
         reset_filename_lookup
 
-        Ole::Storage.open(@archive) do |ole|
-          children(ole).each do |file|
-            next if ole.file.directory?(file)
-
-            filename = prepare_filename(file)
-            path = File.join(target, filename)
-            content = ole.file.read(file)
-            File.write(path, content, mode: "wb")
+        Omnizip::Formats::Ole.open(@archive) do |ole|
+          children(ole).each do |entry|
+            path = File.join(target, prepare_filename(entry))
+            FileUtils.mkdir_p(File.dirname(path))
+            content = ole.read(entry)
+            File.write(path, content, mode: "wb") if content
           end
         end
       end
 
       def children(ole)
-        ole.dir.entries(".") - [".", ".."]
+        ole.list("/")
       end
 
       def reset_filename_lookup
@@ -56,6 +61,8 @@ module Excavate
 
       def rename_archives(target)
         Dir.glob(File.join(target, "**", "*")).each do |file|
+          next unless File.file?(file)
+
           FileUtils.mv(file, "#{file}.cab") if cab?(file)
         end
       end

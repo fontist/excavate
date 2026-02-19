@@ -1,11 +1,16 @@
+# frozen_string_literal: true
+
+require "zlib"
+
 module Excavate
   module Extractors
     class GzipExtractor < Extractor
       def extract(target)
+        basename = File.basename(@archive, ".*")
+        output_path = File.join(target, basename)
+
         Zlib::GzipReader.open(@archive) do |gz|
-          basename = File.basename(@archive, ".*")
-          path = File.join(target, basename)
-          File.write(path, gz.read, mode: "wb")
+          File.write(output_path, gz.read, mode: "wb")
         end
       end
     end

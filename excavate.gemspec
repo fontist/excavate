@@ -31,15 +31,8 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "arr-pm", "~> 0.0"
-  # spec.add_dependency "bundler", "~> 2", ">= 2.3.24"
-  # Workaround for https://github.com/metanorma/ruby-libmspack/issues/2
-  spec.add_dependency "ffi-compiler2", ">= 2.2.2"
-  spec.add_dependency "ffi-libarchive-binary", "~> 0.4", ">= 0.4.2"
-  spec.add_dependency "libmspack", "~> 0.1"
-  spec.add_dependency "ruby-ole", "~> 1.0"
-  spec.add_dependency "rubyzip", "~> 2.3"
-  spec.add_dependency "seven-zip", "~> 1.4"
+  spec.add_dependency "cabriolet", "~> 0.2.2"
+  spec.add_dependency "omnizip", "~> 0.3.5"
   spec.add_dependency "thor", "~> 1.0"
 
   spec.metadata["rubygems_mfa_required"] = "false"

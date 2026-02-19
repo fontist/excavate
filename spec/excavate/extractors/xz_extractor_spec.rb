@@ -48,14 +48,11 @@ RSpec.describe Excavate::Extractors::XzExtractor do
     context "with pure xz compressed file" do
       let(:archive_file) { "simple_test.txt.xz" }
 
-      # Note: Pure .xz files (non-tar) require special handling
-      # libarchive treats them as compressed streams, not archives
-      it "attempts to extract but may not extract as expected for pure compression" do
-        # This documents the current behavior - pure .xz needs different handling
-        # than tar.xz compound archives
-        expect do
-          extractor.extract(target_dir)
-        end.to raise_error(Archive::Error, /Unrecognized archive format/)
+      it "extracts the decompressed file" do
+        extractor.extract(target_dir)
+        extracted_file = File.join(target_dir, "simple_test.txt")
+
+        expect(File.exist?(extracted_file)).to be true
       end
     end
 
@@ -118,21 +115,11 @@ RSpec.describe Excavate::Extractors::XzExtractor do
     end
   end
 
-  describe "libarchive integration" do
+  describe "Omnizip integration" do
     let(:archive_file) { "test.tar.xz" }
 
-    it "uses ffi-libarchive-binary library" do
-      expect(defined?(Archive)).to be_truthy
-    end
-
-    it "uses Archive::Reader for extraction" do
-      expect(Archive::Reader).to receive(:open_filename)
-        .with(archive)
-        .and_call_original
-
-      target_dir = Dir.mktmpdir
-      extractor.extract(target_dir)
-      FileUtils.rm_rf(target_dir)
+    it "uses Omnizip::Formats::Xz for decompression" do
+      expect(defined?(Omnizip::Formats::Xz)).to be_truthy
     end
   end
 end

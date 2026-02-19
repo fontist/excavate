@@ -1,32 +1,17 @@
-require "libmspack"
+# frozen_string_literal: true
+
+require "cabriolet"
 
 module Excavate
   module Extractors
     class CabExtractor < Extractor
       def extract(target)
-        open_cab(@archive) do |decompressor, cab|
-          file = cab.files
+        decompressor = Cabriolet::CAB::Decompressor.new
+        decompressor.salvage = true # Enable salvage mode for compatibility
 
-          while file
-            path = File.join(target, file.filename)
-            decompressor.extract(file, path)
-            file = file.next
-          end
-        end
-      end
-
-      private
-
-      def open_cab(archive)
-        decompressor = LibMsPack::CabDecompressor.new
-        cab = Utils.silence_stream($stderr) do
-          decompressor.search(archive)
-        end
-
-        yield decompressor, cab
-
-        decompressor.close(cab)
-        decompressor.destroy
+        # Try to find embedded CAB first (for self-extracting archives)
+        cabinet = decompressor.search(@archive) || decompressor.open(@archive)
+        decompressor.extract_all(cabinet, target, salvage: true)
       end
     end
   end
