@@ -25,7 +25,7 @@ module Excavate
 
       all_files_in(target).map(&block)
     ensure
-      FileUtils.rm_rf(target)
+      windows_safe_rm_rf(target)
     end
 
     def extract(target = nil,
@@ -187,8 +187,9 @@ module Excavate
 
     def may_be_nested_cab?(extension, message)
       extension == "exe" &&
-        message.start_with?("Invalid file format",
-                            "Unrecognized archive format")
+        (message.start_with?("Invalid file format",
+                             "Unrecognized archive format") ||
+         message.include?("Invalid .7z signature"))
     end
 
     def extract_once(archive, target)
@@ -208,13 +209,60 @@ module Excavate
     def extract_and_replace(archive)
       target = Dir.mktmpdir
       extract_recursively(archive, target)
+      replace_archive_with_contents(archive, target)
+    rescue StandardError
+      FileUtils.rm_rf(target)
+      raise unless normalized_extension(archive) == "exe"
+    end
 
-      FileUtils.rm(archive)
+    def replace_archive_with_contents(archive, target)
+      windows_safe_rm(archive)
       FileUtils.mv(target, archive)
-    rescue FFI::NullPointerError => e
-      FileUtils.rmdir(target)
-      raise unless normalized_extension(archive) == "exe" &&
-        e.message.start_with?(INVALID_MEMORY_MESSAGE)
+    rescue Errno::EACCES
+      # Windows: file is locked. Copy extracted contents to archive location
+      # and keep both the archive and extracted files
+      target_dir = File.dirname(archive)
+      # Copy all extracted files to the target directory
+      Dir.glob(File.join(target, "**", "*")).each do |src|
+        next unless File.file?(src)
+
+        dest = File.join(target_dir, File.basename(src))
+        FileUtils.cp(src, dest) unless File.exist?(dest)
+      end
+      # Leave the original locked archive in place
+    end
+
+    # Windows sometimes holds file locks briefly after operations.
+    # This method retries file deletion with a small delay.
+    def windows_safe_rm(path, max_retries: 5)
+      attempts = 0
+      begin
+        FileUtils.rm(path)
+      rescue Errno::EACCES => e
+        attempts += 1
+        if attempts < max_retries
+          sleep(0.2)
+          retry
+        else
+          raise e
+        end
+      end
+    end
+
+    # Windows-safe recursive removal
+    def windows_safe_rm_rf(path, max_retries: 5)
+      attempts = 0
+      begin
+        FileUtils.rm_rf(path)
+      rescue Errno::EACCES, Errno::ENOTEMPTY => e
+        attempts += 1
+        if attempts < max_retries
+          sleep(0.2)
+          retry
+        else
+          raise e
+        end
+      end
     end
 
     def normalized_extension(file)

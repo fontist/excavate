@@ -6,6 +6,7 @@ inherit_from:
 
 # local repo-specific modifications
 AllCops:
+  NewCops: disable
   Exclude:
     - 'lib/excavate/extractors/cpio/cpio_old_format.rb'
     - 'vendor/**/*'

@@ -1,27 +1,17 @@
-require "ffi-libarchive-binary"
+# frozen_string_literal: true
+
+require "omnizip"
+require "omnizip/formats/xar"
 
 module Excavate
   module Extractors
     class XarExtractor < Extractor
       def extract(target)
-        Dir.chdir(target) do
-          extract_with_libarchive
-          rename_payload(target)
-        end
+        Omnizip::Formats::Xar.extract(@archive, target)
+        rename_payload(target)
       end
 
       private
-
-      def extract_with_libarchive
-        flags = ::Archive::EXTRACT_PERM
-        reader = ::Archive::Reader.open_filename(@archive)
-
-        reader.each_entry do |entry|
-          reader.extract(entry, flags.to_i)
-        end
-
-        reader.close
-      end
 
       def rename_payload(target)
         Dir.glob(File.join(target, "**", "Payload")).each do |file|

@@ -1,33 +1,35 @@
-require "arr-pm"
+# frozen_string_literal: true
 
-H_MAGIC = "\x8e\xad\xe8\x01\x00\x00\x00\x00".force_encoding("BINARY")
-
-# fix for Ruby 3.0
-unless RPM::File::Header::HEADER_MAGIC == H_MAGIC
-  RPM::File::Header.send(:remove_const, "HEADER_MAGIC")
-  RPM::File::Header.const_set(:HEADER_MAGIC, H_MAGIC)
-end
+require "omnizip"
+require "omnizip/formats/rpm"
 
 module Excavate
   module Extractors
+    # Extractor for RPM packages
+    #
+    # Uses Omnizip's RPM format support for extraction.
+    # Extracts the raw payload as a file (e.g., fonts.src.cpio.gz).
     class RpmExtractor < Extractor
       def extract(target)
-        File.open(@archive, "rb") do |file|
-          rpm = RPM::File.new(file)
-          content = rpm.payload.read
-          path = target_path(@archive, rpm.tags, target)
+        rpm = Omnizip::Formats::Rpm::Reader.new(@archive)
+        rpm.open
+        content = rpm.raw_payload
+        path = target_path(@archive, rpm, target)
+        rpm.close
 
-          File.write(path, content, mode: "wb")
-        end
+        FileUtils.mkdir_p(File.dirname(path))
+        File.write(path, content, mode: "wb")
       end
 
       private
 
-      def target_path(archive, tags, dir)
-        archive_format = tags[:payloadformat]
-        compression_format = tags[:payloadcompressor] == "gzip" ? "gz" : tags[:payloadcompressor]
+      def target_path(archive, rpm, dir)
         basename = File.basename(archive, ".*")
-        filename = "#{basename}.#{archive_format}.#{compression_format}"
+        payload_format = rpm.tags[:payloadformat] || "cpio"
+        compression_format = rpm.tags[:payloadcompressor] || "gzip"
+        # Convert "gzip" to "gz" for file extension
+        compression_ext = compression_format == "gzip" ? "gz" : compression_format
+        filename = "#{basename}.#{payload_format}.#{compression_ext}"
         File.join(dir, filename)
       end
     end
