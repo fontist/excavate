@@ -12,7 +12,3 @@ gem "rubocop-performance"
 gem "rubocop-rake"
 gem "rubocop-rspec"
 
-# Local development dependencies
-gem "cabriolet", git: "https://github.com/omnizip/cabriolet.git", branch: "main"
-gem "omnizip", git: "https://github.com/omnizip/omnizip.git",
-               branch: "rt-add-rpm-ole"
