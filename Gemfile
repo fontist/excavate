@@ -12,4 +12,5 @@ gem "rubocop-performance"
 gem "rubocop-rake"
 gem "rubocop-rspec"
 
-gem "omnizip", git: "https://github.com/omnizip/omnizip.git", branch: "fix/autoload-and-namespace-issues"
+gem "omnizip", git: "https://github.com/omnizip/omnizip.git",
+               branch: "fix/autoload-and-namespace-issues"
