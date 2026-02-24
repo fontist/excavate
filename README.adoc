@@ -4,6 +4,24 @@ image:https://img.shields.io/gem/v/excavate.svg["Gem Version", link="https://rub
 image:https://codeclimate.com/github/fontist/excavate/badges/gpa.svg["Code Climate", link="https://codeclimate.com/github/fontist/excavate"]
 image:https://github.com/fontist/excavate/workflows/rake/badge.svg["Build Status", link="https://github.com/fontist/excavate/actions?workflow=rake"]
 
+**As of version 0.3.9, Excavate is a 100% pure Ruby gem with no compiled
+dependencies.**
+
+This means:
+
+* **Cross-platform compatibility**: Works identically on MRI, JRuby, and
+  TruffleRuby without any native compilation
+* **Simplified installation**: No need for system libraries, C compilers, or
+  development headers
+* **Improved security**: Reduced attack surface with no native code dependencies
+* **Consistent behavior**: Same implementation across all operating systems
+  (Linux, macOS, Windows, BSD)
+
+The migration to pure Ruby was achieved by replacing native library dependencies
+with the https://github.com/omnizip/omnizip[Omnizip] and
+https://github.com/fontist/cabriolet[Cabriolet] gems, which provide pure Ruby
+implementations of compression algorithms and archive formats.
+
 == Purpose
 
 Excavate is a Ruby gem that provides a unified interface for extracting
@@ -509,15 +527,35 @@ the command-line interface.
 
 == Dependencies
 
-Excavate depends on the following system libraries through the
-https://github.com/fontist/ffi-libarchive-binary[ffi-libarchive-binary] gem:
+Excavate is a pure Ruby gem with no compiled dependencies. It works on all
+major Ruby platforms including MRI, JRuby, and TruffleRuby without requiring
+any native extensions or system libraries.
 
-* zlib
-* Expat
-* OpenSSL (for Linux only)
+=== Pure Ruby benefits
 
-These dependencies are generally present on all systems and require no special
-installation steps.
+The migration to pure Ruby implementations provides several important benefits:
+
+* **Cross-platform compatibility**: Works seamlessly across macOS, Linux,
+  Windows, and BSD without platform-specific compilation.
+* **Simplified installation**: No need for C compilers, development headers, or
+  system libraries. Just `gem install excavate` works everywhere.
+* **Consistent behavior**: Same implementation and behavior across all Ruby
+  interpreters (MRI, JRuby, TruffleRuby).
+* **Reduced attack surface**: Fewer native dependencies means fewer potential
+  security vulnerabilities from system libraries.
+* **Easier containerization**: Smaller Docker images without build tools and
+  development packages.
+
+=== Ruby dependencies
+
+Excavate relies on the following pure Ruby gems:
+
+* https://github.com/omnizip/omnizip[omnizip]: Pure Ruby implementations of
+  ZIP, 7-Zip, TAR, GZIP, XZ, and CPIO formats (based on 7-Zip LZMA SDK).
+* https://github.com/fontist/cabriolet[cabriolet]: Pure Ruby implementation of
+  Microsoft CAB format.
+* https://github.com/djberg96/arr-pm[arr-pm]: Pure Ruby RPM package handling.
+* https://github.com/ironbishop/ruby-ole[ruby-ole]: Pure Ruby OLE/MSI handling.
 
 == Development
 
