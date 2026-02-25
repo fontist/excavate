@@ -1,11 +1,33 @@
 /.bundle/
 /.yardoc
-/.vscode
 /_yardoc/
 /coverage/
 /doc/
 /pkg/
 /spec/reports/
 /tmp/
+
+# rspec failure tracking
+.rspec_status
+
+# Ruby temporary files
+*.swp
+*.tmp
+*.log
+.DS_Store
+.rubocop-https*
 Gemfile.lock
-.rubocop-*
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+
+# Build artifacts
+docs/_site/
+.jekyll-cache
+.kilocode
+
+# Temporary development files at root level (patterns)
+TODO*.md
+CLAUDE.md

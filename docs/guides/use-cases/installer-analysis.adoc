@@ -1,0 +1,209 @@
+---
+title: Installer Analysis
+parent: Use Cases
+grand_parent: Guides
+nav_order: 2
+---
+
+== Installer Analysis
+
+=== Purpose
+
+This guide covers analyzing software installer contents without running the
+installer.
+
+=== References
+
+* <<../formats/msi-format,MSI Format>>
+* <<../formats/rpm-format,RPM Format>>
+* <<../formats/xar-pkg-format,XAR/PKG Format>>
+
+=== Concepts
+
+Software installers often contain archives within archives. Excavate can extract
+and analyze the contents for security auditing, dependency analysis, or
+documentation purposes.
+
+=== Analyzing Windows Installers (MSI)
+
+==== List All Files
+
+[source,ruby]
+----
+# List all files in an MSI installer
+Excavate::Archive.new('setup.msi').files(recursive_packages: true) do |path|
+  puts path
+end
+----
+
+==== Analyze by Extension
+
+[source,ruby]
+----
+stats = Excavate::Archive.new('installer.msi').files(recursive_packages: true) do |path|
+  File.extname(path).downcase
+end
+
+by_ext = stats.group_by(&:itself).transform_values(&:count)
+by_ext.sort_by { |_, count| -count }.each do |ext, count|
+  puts "#{ext}: #{count}"
+end
+----
+
+==== Find Executable Files
+
+[source,ruby]
+----
+executables = Excavate::Archive.new('installer.msi').files(
+  recursive_packages: true,
+  filter: '**/*.{exe,dll,ocx}'
+) do |path|
+  {
+    name: File.basename(path),
+    size: File.size(path)
+  }
+end
+
+executables.each { |e| puts "#{e[:name]}: #{e[:size]} bytes" }
+----
+
+=== Analyzing RPM Packages
+
+==== List Package Contents
+
+[source,ruby]
+----
+# List all files in an RPM
+Excavate::Archive.new('package.rpm').files(recursive_packages: true) do |path|
+  puts path
+end
+----
+
+==== Extract Configuration Files
+
+[source,ruby]
+----
+configs = Excavate::Archive.new('package.rpm').extract(
+  recursive_packages: true,
+  filter: '**/etc/**/*'
+)
+----
+
+=== Analyzing macOS Packages (PKG)
+
+==== List Package Contents
+
+[source,ruby]
+----
+# List all files in a PKG
+Excavate::Archive.new('Installer.pkg').files(recursive_packages: true) do |path|
+  puts path
+end
+----
+
+==== Extract Application Bundle
+
+[source,ruby]
+----
+Excavate::Archive.new('App.pkg').extract(
+  recursive_packages: true,
+  filter: '**/*.app/**/*'
+)
+----
+
+=== Security Analysis
+
+==== Find Script Files
+
+[source,ruby]
+----
+# Find potential script files
+scripts = Excavate::Archive.new('installer.msi').files(
+  recursive_packages: true,
+  filter: '**/*.{bat,cmd,ps1,vbs,js}'
+) do |path|
+  content = File.read(path)
+  { path: path, size: content.size, preview: content[0..100] }
+end
+
+scripts.each { |s| puts "#{s[:path]}: #{s[:preview]}" }
+----
+
+==== Find Configuration Files
+
+[source,ruby]
+----
+configs = Excavate::Archive.new('installer.msi').files(
+  recursive_packages: true,
+  filter: '**/*.{conf,config,ini,xml,yaml,yml,json}'
+) do |path|
+  { path: path, content: File.read(path) }
+end
+
+configs.each do |c|
+  puts "=" * 40
+  puts c[:path]
+  puts c[:content]
+end
+----
+
+=== Dependency Analysis
+
+==== Find DLL Dependencies
+
+[source,ruby]
+----
+dlls = Excavate::Archive.new('installer.msi').files(
+  recursive_packages: true,
+  filter: '**/*.dll'
+) do |path|
+  File.basename(path)
+end
+
+puts "DLLs required:"
+dlls.sort.uniq.each { |dll| puts "  - #{dll}" }
+----
+
+=== Documentation Generation
+
+==== Generate File Manifest
+
+[source,ruby]
+----
+files = Excavate::Archive.new('installer.msi').files(recursive_packages: true) do |path|
+  {
+    path: path,
+    size: File.size(path),
+    type: File.directory?(path) ? 'directory' : 'file'
+  }
+end
+
+puts "Installer Contents:"
+puts "-" * 60
+files.each do |f|
+  printf "%-10s %s\n", "#{f[:size]} bytes", f[:path]
+end
+puts "-" * 60
+puts "Total: #{files.size} items"
+----
+
+=== CLI Usage
+
+[source,bash]
+----
+# List all files recursively
+excavate -r installer.msi
+
+# Extract specific file types
+excavate -r --filter "**/*.dll" installer.msi
+
+# Extract and analyze
+excavate -r package.rpm
+find package -type f | sort
+----
+
+=== Related Topics
+
+* <<../formats/msi-format,MSI Format>>
+* <<../formats/rpm-format,RPM Format>>
+* <<../formats/xar-pkg-format,XAR/PKG Format>>

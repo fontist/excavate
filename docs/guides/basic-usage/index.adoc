@@ -1,0 +1,61 @@
+---
+title: Basic Usage
+parent: Guides
+has_children: true
+---
+
+== Basic Usage
+
+=== Purpose
+
+This section covers the fundamental extraction operations in Excavate.
+
+=== Topics
+
+[cols="1,4"]
+|===
+| Guide | Description
+
+| <<extracting-files,Extracting Files>>
+| Basic extraction to a directory
+
+| <<selective-extraction,Selective Extraction>>
+| Extract specific files by path
+
+| <<filter-patterns,Filter Patterns>>
+| Extract files matching patterns
+
+| <<file-iteration,File Iteration>>
+| Process files during extraction
+|===
+
+=== Quick Reference
+
+.Basic extraction
+[source,ruby]
+----
+Excavate::Archive.new('package.zip').extract
+----
+
+.Recursive extraction
+[source,ruby]
+----
+Excavate::Archive.new('installer.msi').extract(recursive_packages: true)
+----
+
+.Selective extraction
+[source,ruby]
+----
+Excavate::Archive.new('data.tar').extract(files: ['config.json'])
+----
+
+.Filter extraction
+[source,ruby]
+----
+Excavate::Archive.new('fonts.zip').extract(filter: '**/*.ttf')
+----
+
+=== Next Steps
+
+Start with <<extracting-files,Extracting Files>> for detailed information on
+basic extraction operations.

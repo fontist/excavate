@@ -1,0 +1,96 @@
+---
+title: Archive Formats
+parent: Guides
+has_children: true
+---
+
+== Archive Formats
+
+=== Purpose
+
+Format-specific guides for working with different archive types supported by
+Excavate.
+
+=== Supported Formats
+
+Excavate supports extraction from 10+ archive formats:
+
+[cols="1,2,2"]
+|===
+| Format | Extension(s) | Description
+
+| CAB
+| `.cab`
+| Microsoft Cabinet files
+
+| CPIO
+| `.cpio`
+| Unix CPIO archives
+
+| GZIP
+| `.gz`, `.tar.gz`
+| GZIP compression
+
+| MSI
+| `.msi`
+| Windows Installer packages
+
+| RPM
+| `.rpm`
+| Red Hat Package Manager
+
+| 7-Zip
+| `.7z`, `.exe`
+| 7-Zip archives
+
+| TAR
+| `.tar`
+| Unix tape archives
+
+| XAR/PKG
+| `.xar`, `.pkg`
+| macOS packages
+
+| XZ
+| `.xz`, `.tar.xz`
+| XZ compression
+
+| ZIP
+| `.zip`
+| Standard ZIP archives
+|===
+
+=== Format Guides
+
+Select a format for detailed information:
+
+* <<cab-format,CAB Format>> - Microsoft Cabinet files
+* <<msi-format,MSI Format>> - Windows Installer packages
+* <<rpm-format,RPM Format>> - Red Hat packages
+* <<sevenzip-format,7-Zip Format>> - High compression archives
+* <<tar-format,TAR Format>> - Unix tape archives
+* <<xar-pkg-format,XAR/PKG Format>> - macOS packages
+
+=== Format Detection
+
+Excavate detects archive format by file extension:
+
+[source,ruby]
+----
+# Extension determines format
+Excavate::Archive.new('file.zip')   # Uses ZipExtractor
+Excavate::Archive.new('file.tar')   # Uses TarExtractor
+Excavate::Archive.new('file.msi')   # Uses OleExtractor
+----
+
+For `.exe` files, Excavate tries 7-Zip first, then CAB:
+
+[source,ruby]
+----
+# May be 7-Zip or CAB self-extracting
+Excavate::Archive.new('installer.exe').extract(recursive_packages: true)
+----
+
+=== See Also
+
+* <<format-comparison,Format Comparison>> - Compare format capabilities

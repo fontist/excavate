@@ -1,0 +1,286 @@
+---
+title: Common Workflows
+parent: Getting Started
+nav_order: 4
+---
+
+== Common Workflows
+
+=== Purpose
+
+This guide covers practical extraction patterns for common use cases. Use these
+as templates for your own workflows.
+
+=== References
+
+* xref:basic-usage.adoc[Basic Usage]
+* xref:../reference/api.adoc[API Reference]
+
+=== Concepts
+
+Real-world archive extraction often involves combinations of recursive
+extraction, filtering, and error handling. This guide provides ready-to-use
+patterns for common scenarios.
+
+=== Extracting Windows Installers
+
+Windows installers (MSI files) contain nested CAB archives. Extract all files
+recursively:
+
+[source,ruby]
+----
+require 'excavate'
+
+# Extract MSI with all embedded files
+archive = Excavate::Archive.new('setup.msi')
+archive.extract(recursive_packages: true)
+----
+
+.Extract specific file types from MSI
+[source,ruby]
+----
+# Extract only DLL files from an MSI installer
+Excavate::Archive.new('installer.msi').extract(
+  recursive_packages: true,
+  filter: '**/*.dll'
+)
+----
+
+.Extract specific files by name
+[source,ruby]
+----
+# Extract specific files from nested CAB
+Excavate::Archive.new('installer.msi').extract(
+  recursive_packages: true,
+  files: ['data1.cab/config.ini', 'data1.cab/README.txt']
+)
+----
+
+=== Extracting macOS Packages
+
+macOS installer packages (PKG) are XAR archives containing CPIO payloads:
+
+[source,ruby]
+----
+# Extract PKG with automatic CPIO extraction
+Excavate::Archive.new('Installer.pkg').extract(recursive_packages: true)
+
+# Extract to specific directory
+Excavate::Archive.new('Installer.pkg').extract(
+  '/path/to/output',
+  recursive_packages: true
+)
+----
+
+=== Extracting RPM Packages
+
+RPM files contain compressed CPIO payloads:
+
+[source,ruby]
+----
+# Extract RPM package
+Excavate::Archive.new('package.rpm').extract(recursive_packages: true)
+
+# Extract only executables
+Excavate::Archive.new('package.rpm').extract(
+  recursive_packages: true,
+  filter: '**/bin/*'
+)
+----
+
+=== Processing Font Archives
+
+Extract fonts from various archive formats:
+
+[source,ruby]
+----
+# Extract all TrueType fonts
+Excavate::Archive.new('fonts.zip').extract(filter: '**/*.ttf')
+
+# Extract multiple font types
+Excavate::Archive.new('fonts.zip').extract(filter: '**/*.{ttf,otf,woff}')
+
+# Process fonts during extraction
+font_files = Excavate::Archive.new('fonts.zip').files(
+  filter: '**/*.ttf'
+) do |path|
+  {
+    name: File.basename(path),
+    size: File.size(path),
+    path: path
+  }
+end
+----
+
+=== Batch Processing Multiple Archives
+
+Process multiple archives in a directory:
+
+[source,ruby]
+----
+require 'fileutils'
+
+Dir.glob('archives/*.{zip,tar.gz,msi}').each do |archive_path|
+  begin
+    archive = Excavate::Archive.new(archive_path)
+    target = File.basename(archive_path, '.*')
+
+    archive.extract(target, recursive_packages: true)
+    puts "Extracted: #{archive_path} -> #{target}/"
+  rescue Excavate::Error => e
+    puts "Failed: #{archive_path} - #{e.message}"
+  end
+end
+----
+
+=== Rails File Upload Handler
+
+Handle uploaded archives in a Rails controller:
+
+[source,ruby]
+----
+class ArchivesController < ApplicationController
+  def upload
+    archive = Excavate::Archive.new(params[:file])
+
+    # Create temporary directory
+    target = Dir.mktmpdir('excavate-')
+
+    begin
+      # Extract with recursive option
+      archive.extract(target, recursive_packages: true)
+
+      # Process extracted files
+      process_extracted_files(target)
+
+      redirect_to root_path, notice: 'Archive processed successfully'
+    rescue Excavate::Error => e
+      flash[:alert] = "Extraction failed: #{e.message}"
+      redirect_to root_path
+    ensure
+      # Clean up
+      FileUtils.rm_rf(target)
+    end
+  end
+
+  private
+
+  def process_extracted_files(directory)
+    Dir.glob("#{directory}/**/*").each do |file|
+      next unless File.file?(file)
+
+      # Process each file
+      puts "Processing: #{file}"
+    end
+  end
+end
+----
+
+=== Analyzing Archive Contents
+
+List and analyze archive contents without permanent extraction:
+
+[source,ruby]
+----
+# Analyze files during extraction
+stats = Excavate::Archive.new('data.tar.gz').files(
+  recursive_packages: true
+) do |path|
+  {
+    path: path,
+    size: File.size(path),
+    ext: File.extname(path),
+    mtime: File.mtime(path)
+  }
+end
+
+# Group by extension
+by_extension = stats.group_by { |s| s[:ext] }
+by_extension.each do |ext, files|
+  puts "#{ext}: #{files.size} files, #{files.sum { |f| f[:size] } } bytes"
+end
+----
+
+=== Error Handling Patterns
+
+Robust error handling for production use:
+
+[source,ruby]
+----
+def safe_extract(archive_path, target, options = {})
+  archive = Excavate::Archive.new(archive_path)
+
+  begin
+    result = archive.extract(target, **options)
+    { success: true, target: result }
+  rescue Excavate::TargetExistsError => e
+    { success: false, error: :target_exists, message: e.message }
+  rescue Excavate::TargetNotEmptyError => e
+    { success: false, error: :target_not_empty, message: e.message }
+  rescue Excavate::TargetNotFoundError => e
+    { success: false, error: :target_not_found, message: e.message }
+  rescue Excavate::UnknownArchiveError => e
+    { success: false, error: :unknown_format, message: e.message }
+  rescue Excavate::Error => e
+    { success: false, error: :extraction_failed, message: e.message }
+  end
+end
+
+# Usage
+result = safe_extract('package.zip', 'output', recursive_packages: true)
+if result[:success]
+  puts "Extracted to: #{result[:target]}"
+else
+  puts "Error: #{result[:message]}"
+end
+----
+
+=== Shell Script Integration
+
+Use the CLI in shell scripts:
+
+[source,bash]
+----
+#!/bin/bash
+set -e
+
+# Extract all installers
+for msi in installers/*.msi; do
+  name=$(basename "$msi" .msi)
+  excavate -r "$msi"
+  echo "Extracted: $name"
+done
+
+# Extract with error handling
+excavate package.zip
+case $? in
+  0) echo "Success" ;;
+  2) echo "Target exists, removing..." && rm -rf package && excavate package.zip ;;
+  *) echo "Error: $?" && exit 1 ;;
+esac
+----
+
+=== Performance Considerations
+
+For large archives or batch processing:
+
+[source,ruby]
+----
+# Process files one at a time to reduce memory
+Excavate::Archive.new('large.tar.gz').files do |path|
+  process_file(path)
+  # File is cleaned up after block
+end
+
+# Filter early to avoid extracting unnecessary files
+Excavate::Archive.new('data.zip').extract(
+  filter: '**/important/**/*',
+  recursive_packages: true
+)
+----
+
+=== Next Steps
+
+* Explore <<../guides/index,format-specific guides>>
+* Learn about <<../guides/advanced-usage,error handling>>
+* Check the <<../reference/api.adoc,API reference>>

@@ -1,0 +1,397 @@
+---
+title: API Reference
+parent: Reference
+nav_order: 1
+---
+
+== API Reference
+
+=== Excavate::Archive
+
+The main class for archive extraction operations.
+
+=== Constructor
+
+[source,ruby]
+----
+Excavate::Archive.new(archive_path)
+----
+
+Parameters::
+`archive_path`:: Path to the archive file. Can be a string path, Pathname,
+or any object responding to `original_filename` (e.g., Rails uploaded files).
+
+Returns::
+A new `Excavate::Archive` instance.
+
+Example::
+[source,ruby]
+----
+# String path
+archive = Excavate::Archive.new("package.zip")
+
+# Pathname
+archive = Excavate::Archive.new(Pathname.new("package.zip"))
+
+# Rails upload
+archive = Excavate::Archive.new(params[:file])
+----
+
+=== Instance Methods
+
+==== extract
+
+Extract the archive to a target directory.
+
+[source,ruby]
+----
+extract(target = nil, recursive_packages: false, files: [], filter: nil)
+----
+
+Parameters::
+`target`:: (optional) Target directory path. If omitted, creates a directory
+with the archive's base name in the current directory.
+`recursive_packages`:: (optional) Boolean. When `true`, recursively extracts
+nested archives. Default: `false`.
+`files`:: (optional) Array of file paths to extract. If specified, only
+these files are extracted.
+`filter`:: (optional) Glob pattern string. If specified, only matching
+files are extracted.
+
+Returns::
+- String: Target directory path (when extracting all)
+- Array<String>: Extracted file paths (when using `files` or `filter`)
+
+Raises::
+`TargetExistsError`:: Target file or directory already exists.
+`TargetNotEmptyError`:: Target directory is not empty.
+`TargetNotFoundError`:: Specified file or pattern not found.
+`UnknownArchiveError`:: Archive format not recognized.
+
+Examples::
+[source,ruby]
+----
+# Basic extraction
+Excavate::Archive.new("package.zip").extract
+# => "/path/to/package"
+
+# Extract to specific directory
+Excavate::Archive.new("package.zip").extract("/tmp/output")
+# => "/tmp/output"
+
+# Recursive extraction
+Excavate::Archive.new("installer.msi").extract(recursive_packages: true)
+
+# Selective extraction
+Excavate::Archive.new("data.tar").extract(files: ["config.json"])
+# => ["/path/to/config.json"]
+
+# Filter-based extraction
+Excavate::Archive.new("fonts.zip").extract(filter: "**/*.ttf")
+# => ["/path/to/Arial.ttf", "/path/to/Verdana.ttf"]
+----
+
+==== files
+
+Extract and process files through a block.
+
+[source,ruby]
+----
+files(recursive_packages: false, files: [], filter: nil, &block)
+----
+
+Parameters::
+Same as `extract`.
+
+Block::
+Yields each extracted file path to the block.
+
+Returns::
+Array of values returned by the block.
+
+Behavior::
+. Creates a temporary directory
+. Extracts files based on parameters
+. Yields each file path to the block
+. Cleans up temporary directory (Windows-safe)
+. Returns array of block results
+
+Example::
+[source,ruby]
+----
+# Collect font paths
+font_paths = Excavate::Archive.new("fonts.zip").files(
+  filter: "**/*.ttf"
+) do |path|
+  puts "Found: #{path}"
+  path
+end
+# => ["/tmp/.../Arial.ttf", "/tmp/.../Verdana.ttf"]
+
+# Analyze files
+stats = Excavate::Archive.new("data.tar.gz").files do |path|
+  { path: path, size: File.size(path) }
+end
+
+# Process with recursive extraction
+configs = Excavate::Archive.new("installer.msi").files(
+  recursive_packages: true,
+  filter: "**/*.conf"
+) do |path|
+  { name: File.basename(path), content: File.read(path) }
+end
+----
+
+=== Supported Formats
+
+The TYPES constant maps extensions to extractors:
+
+[source,ruby]
+----
+{
+  "cab"  => Extractors::CabExtractor,    # Microsoft Cabinet
+  "cpio" => Extractors::CpioExtractor,   # Unix CPIO
+  "exe"  => Extractors::SevenZipExtractor, # Self-extracting (7z or CAB)
+  "gz"   => Extractors::GzipExtractor,   # GZIP compression
+  "msi"  => Extractors::OleExtractor,    # Windows Installer
+  "pkg"  => Extractors::XarExtractor,    # macOS Package
+  "rpm"  => Extractors::RpmExtractor,    # Red Hat Package
+  "tar"  => Extractors::TarExtractor,    # Unix TAR
+  "xz"   => Extractors::XzExtractor,     # XZ compression
+  "zip"  => Extractors::ZipExtractor     # ZIP archive
+}
+----
+
+=== Format Detection
+
+Format is detected by file extension, not content. Ensure files have
+correct extensions for proper extraction.
+
+For `.gz` files, Excavate additionally verifies the gzip magic bytes to
+avoid extracting non-gzip files with `.gz` extension.
+
+For `.exe` files, Excavate tries 7-Zip first, then falls back to CAB
+extraction for self-extracting CAB archives.
+
+== Error Classes
+
+All errors inherit from `Excavate::Error`.
+
+=== Excavate::Error
+
+Base error class for all Excavate errors.
+
+[source,ruby]
+----
+begin
+  # ... extraction code
+rescue Excavate::Error => e
+  puts "Extraction failed: #{e.message}"
+end
+----
+
+=== Excavate::TargetExistsError
+
+Raised when the target file or directory already exists.
+
+[source,ruby]
+----
+begin
+  Excavate::Archive.new("file.zip").extract
+rescue Excavate::TargetExistsError => e
+  puts e.message  # "Target file `file` already exists."
+end
+----
+
+=== Excavate::TargetNotEmptyError
+
+Raised when the target directory is not empty.
+
+[source,ruby]
+----
+begin
+  Excavate::Archive.new("file.zip").extract("/non/empty/dir")
+rescue Excavate::TargetNotEmptyError => e
+  puts e.message  # "Target directory `dir` is not empty."
+end
+----
+
+=== Excavate::TargetNotFoundError
+
+Raised when a specified file or filter pattern matches nothing.
+
+[source,ruby]
+----
+# Missing file
+begin
+  Excavate::Archive.new("data.zip").extract(files: ["missing.txt"])
+rescue Excavate::TargetNotFoundError => e
+  puts e.message  # "File `missing.txt` not found."
+end
+
+# No filter match
+begin
+  Excavate::Archive.new("data.zip").extract(filter: "*.pdf")
+rescue Excavate::TargetNotFoundError => e
+  puts e.message  # "Filter `*.pdf` matched no file."
+end
+----
+
+=== Excavate::UnknownArchiveError
+
+Raised when the archive format is not recognized.
+
+[source,ruby]
+----
+begin
+  Excavate::Archive.new("unknown.dat").extract
+rescue Excavate::UnknownArchiveError => e
+  puts e.message  # "Could not unarchive `unknown.dat`."
+end
+----
+
+== Extractor Classes
+
+Internal classes for format-specific extraction. Not typically used directly.
+
+=== Base Class
+
+[source,ruby]
+----
+class Extractors::Extractor
+  def initialize(archive)
+    @archive = archive
+  end
+
+  def extract(target)
+    raise NotImplementedError
+  end
+end
+----
+
+=== Format-Specific Extractors
+
+Each extractor implements the same interface:
+
+[source,ruby]
+----
+Extractors::CabExtractor.new(archive).extract(target)
+Extractors::CpioExtractor.new(archive).extract(target)
+Extractors::GzipExtractor.new(archive).extract(target)
+Extractors::OleExtractor.new(archive).extract(target)
+Extractors::RpmExtractor.new(archive).extract(target)
+Extractors::SevenZipExtractor.new(archive).extract(target)
+Extractors::TarExtractor.new(archive).extract(target)
+Extractors::XarExtractor.new(archive).extract(target)
+Extractors::XzExtractor.new(archive).extract(target)
+Extractors::ZipExtractor.new(archive).extract(target)
+----
+
+=== Extractor Details
+
+==== CabExtractor
+
+- Uses Cabriolet gem
+- Enables salvage mode for checksum error tolerance
+- Handles self-extracting CAB archives
+
+==== GzipExtractor
+
+- Uses Ruby stdlib `Zlib`
+- Removes `.gz` extension for output filename
+
+==== OleExtractor
+
+- Extracts OLE compound documents (MSI, DOC, XLS)
+- Sanitizes filenames (removes path separators, non-ASCII)
+- Renames detected CAB files with `.cab` extension
+
+==== RpmExtractor
+
+- Extracts RPM payload
+- Names output based on RPM metadata (format, compressor)
+
+==== SevenZipExtractor
+
+- Supports BCJ2 filter for x86 executables
+- Handles self-extracting archives
+
+==== XarExtractor
+
+- Handles macOS `.pkg` files
+- Renames `Payload` to `Payload.cpio.gz`
+
+==== XzExtractor
+
+- Handles `.tar.xz` and `.txz` compound formats
+- Creates temporary TAR file during extraction
+
+== Helper Classes
+
+=== Excavate::FileMagic
+
+Detects file format by reading magic bytes.
+
+[source,ruby]
+----
+# Class method
+format = Excavate::FileMagic.detect("archive.cab")
+# => :cab
+
+# Instance method
+magic = Excavate::FileMagic.new("file.gz")
+format = magic.detect
+# => :gzip
+----
+
+Supported formats:
+
+[cols="1,1,1"]
+|===
+| Format | Magic Bytes | Return Value
+
+| CAB
+| `MSCF\x00\x00\x00\x00`
+| `:cab`
+
+| XZ
+| `\xFD7zXZ\x00`
+| `:xz`
+
+| GZIP
+| `\x1F\x8B`
+| `:gzip`
+
+| Unknown
+| -
+| `nil`
+|===
+
+=== Excavate::Utils
+
+Utility methods for internal use.
+
+==== silence_stream
+
+Silences output to a stream during block execution.
+
+[source,ruby]
+----
+Excavate::Utils.silence_stream($stdout) do
+  # No output to stdout
+  puts "This is silenced"
+end
+----
+
+== Platform-Specific Behavior
+
+=== Windows File Locking
+
+Excavate handles Windows file locking with automatic retries:
+
+- Maximum 5 retries with 0.2 second delays
+- Handles `Errno::EACCES` and `Errno::ENOTEMPTY`
+- Falls back to copying files if deletion fails
+
+This ensures reliable operation on Windows where files may be
+temporarily locked by other processes or the system.

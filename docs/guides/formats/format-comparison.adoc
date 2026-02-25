@@ -1,0 +1,200 @@
+---
+title: Format Comparison
+parent: Archive Formats
+grand_parent: Guides
+nav_order: 7
+---
+
+== Format Comparison
+
+=== Purpose
+
+This guide compares the archive formats supported by Excavate to help you choose
+the right format for your needs.
+
+=== Format Overview
+
+[cols="1,1,1,1,1"]
+|===
+| Format | Extension | Compression | Platform | Recursive
+
+| CAB
+| `.cab`
+| LZSS, MSZIP, LZX, Quantum
+| Windows
+| Yes
+
+| CPIO
+| `.cpio`
+| None
+| Unix
+| Yes
+
+| GZIP
+| `.gz`, `.tar.gz`
+| Deflate
+| Cross-platform
+| Yes
+
+| MSI
+| `.msi`
+| Embedded CAB
+| Windows
+| Yes (nested)
+
+| RPM
+| `.rpm`
+| GZIP, XZ, BZIP2
+| Linux
+| Yes (nested)
+
+| 7-Zip
+| `.7z`
+| LZMA, LZMA2
+| Cross-platform
+| Yes
+
+| TAR
+| `.tar`
+| None
+| Unix
+| Yes
+
+| XAR/PKG
+| `.xar`, `.pkg`
+| GZIP, BZIP2
+| macOS
+| Yes (nested)
+
+| XZ
+| `.xz`, `.tar.xz`
+| LZMA, LZMA2
+| Cross-platform
+| Yes
+
+| ZIP
+| `.zip`
+| Deflate, Deflate64
+| Cross-platform
+| Yes
+|===
+
+=== Format Selection Guide
+
+==== By Platform
+
+.Windows:: CAB, MSI, ZIP
+.Linux:: RPM, TAR, TAR.GZ, TAR.XZ
+.macOS:: PKG, XAR, ZIP
+.Cross-platform:: ZIP, 7-Zip, TAR.GZ
+
+==== By Use Case
+
+.Software Distribution:: MSI, RPM, PKG
+.Source Code:: TAR.GZ, TAR.XZ, ZIP
+.High Compression:: 7-Zip, XZ
+.Compatibility:: ZIP
+.Legacy Windows:: CAB
+
+=== Compression Comparison
+
+[cols="1,2,2,2"]
+|===
+| Format | Speed | Ratio | Compatibility
+
+| ZIP
+| Fast
+| Good
+| Excellent
+
+| TAR.GZ
+| Fast
+| Good
+| Excellent
+
+| TAR.XZ
+| Slow
+| Excellent
+| Good
+
+| 7-Zip
+| Moderate
+| Excellent
+| Good
+
+| CAB
+| Fast
+| Good
+| Windows
+|===
+
+=== Recursive Extraction Support
+
+All formats support recursive extraction for nested archives:
+
+[source,ruby]
+----
+# All formats support recursive_packages
+Excavate::Archive.new('any.format').extract(recursive_packages: true)
+----
+
+Formats commonly containing nested archives:
+
+* MSI → CAB
+* PKG → CPIO.GZ
+* RPM → CPIO.GZ
+* TAR.GZ → any nested archive
+
+=== Feature Matrix
+
+[cols="1,1,1,1,1,1"]
+|===
+| Feature | ZIP | TAR.GZ | 7-Zip | MSI | PKG
+
+| Pure Ruby
+| ✓
+| ✓
+| ✓
+| ✓
+| ✓
+
+| Auto-detection
+| ✓
+| ✓
+| ✓
+| ✓
+| ✓
+
+| Selective extraction
+| ✓
+| ✓
+| ✓
+| ✓
+| ✓
+
+| Filter patterns
+| ✓
+| ✓
+| ✓
+| ✓
+| ✓
+
+| Recursive extraction
+| ✓
+| ✓
+| ✓
+| ✓
+| ✓
+
+| CLI support
+| ✓
+| ✓
+| ✓
+| ✓
+| ✓
+|===
+
+=== Related Topics
+
+* xref:../basic-usage/extracting-files.adoc[Extracting Files]
+* xref:../advanced-usage/recursive-extraction.adoc[Recursive Extraction]

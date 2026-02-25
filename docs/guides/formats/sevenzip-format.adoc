@@ -1,0 +1,132 @@
+---
+title: 7-Zip Format
+parent: Archive Formats
+grand_parent: Guides
+nav_order: 4
+---
+
+== 7-Zip Format
+
+=== Purpose
+
+This guide covers working with 7-Zip archives using Excavate.
+
+=== References
+
+* https://www.7-zip.org/[7-Zip Official Site]
+
+=== Concepts
+
+7-Zip is a high-compression archive format supporting various compression
+algorithms including LZMA and LZMA2. It's commonly used for software
+distribution and large file compression.
+
+=== Basic Usage
+
+==== Extract 7-Zip Archive
+
+[source,ruby]
+----
+Excavate::Archive.new('archive.7z').extract
+----
+
+==== Extract Self-Extracting Archive
+
+[source,ruby]
+----
+# .exe files that are 7-Zip self-extracting
+Excavate::Archive.new('installer.exe').extract
+----
+
+=== 7-Zip Characteristics
+
+[cols="1,2"]
+|===
+| Characteristic | Description
+
+| File extension
+| `.7z`, `.exe`
+
+| Compression
+| LZMA, LZMA2, PPMD, BCJ, BCJ2
+
+| Encryption
+| AES-256
+
+| Max file size
+| 16 billion GB (theoretical)
+
+| Platform
+| Cross-platform
+|===
+
+=== Compression Methods
+
+7-Zip supports multiple compression methods:
+
+* **LZMA** - Default, high compression ratio
+* **LZMA2** - Improved LZMA with better multithreading
+* **PPMD** - Text compression
+* **BCJ** - x86 executable filter
+* **BCJ2** - Enhanced x86 filter
+
+Excavate handles all compression methods automatically.
+
+=== Self-Extracting Archives
+
+7-Zip can create self-extracting archives (`.exe`):
+
+[source,ruby]
+----
+# Excavate tries 7-Zip first for .exe files
+Excavate::Archive.new('sfx.exe').extract(recursive_packages: true)
+----
+
+If the `.exe` is not a 7-Zip archive, Excavate falls back to CAB extraction.
+
+=== Common Use Cases
+
+==== Extract Software Distribution
+
+[source,ruby]
+----
+Excavate::Archive.new('software.7z').extract(recursive_packages: true)
+----
+
+==== Extract Large Archives
+
+[source,ruby]
+----
+# 7-Zip is efficient for large files
+Excavate::Archive.new('backup.7z').extract(
+  filter: '**/important/**/*'
+)
+----
+
+=== CLI Usage
+
+[source,bash]
+----
+# Extract 7-Zip archive
+excavate archive.7z
+
+# Extract self-extracting archive
+excavate installer.exe
+
+# Recursive extraction
+excavate -r package.7z
+----
+
+=== Technical Details
+
+Excavate uses the Omnizip gem's 7-Zip support:
+
+* Pure Ruby implementation
+* Supports BCJ2 filter for x86 executables
+* Handles self-extracting archives
+* No external 7-Zip binary required
+
+=== Related Topics
+
+* <<cab-format,CAB Format>> - Alternative for .exe files
+* xref:../../reference/api.adoc[API Reference]

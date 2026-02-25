@@ -1,0 +1,220 @@
+---
+title: Recursive Extraction
+parent: Advanced Usage
+grand_parent: Guides
+nav_order: 1
+---
+
+== Recursive Extraction
+
+=== Purpose
+
+This guide covers extracting nested archives automatically with recursive
+extraction.
+
+=== References
+
+* xref:../../reference/api.adoc[API Reference]
+
+=== Concepts
+
+Recursive extraction automatically detects and extracts archives within
+archives. This is essential for formats like MSI (which contain CAB files) and
+PKG (which contain CPIO payloads).
+
+=== Basic Usage
+
+Enable recursive extraction with the `recursive_packages` option:
+
+[source,ruby]
+----
+Excavate::Archive.new('installer.msi').extract(recursive_packages: true)
+----
+
+=== How It Works
+
+The recursive extraction process:
+
+. Extract the top-level archive
+. Scan extracted files for nested archives
+. Extract each nested archive
+. Replace the archive file with its contents
+. Repeat until no more nested archives found
+
+[source]
+----
+installer.msi
+    │
+    ├── Extract MSI
+    │
+    ▼
+data1.cab  data2.cab
+    │           │
+    ├── Extract ├── Extract
+    │           │
+    ▼           ▼
+file1.dll   file3.dll
+file2.exe   file4.sys
+----
+
+=== Formats That Benefit
+
+==== MSI Files
+
+MSI files contain embedded CAB archives:
+
+[source,ruby]
+----
+# Extract MSI and all embedded CABs
+Excavate::Archive.new('setup.msi').extract(recursive_packages: true)
+----
+
+==== PKG Files
+
+macOS packages contain CPIO payloads:
+
+[source,ruby]
+----
+# Extract PKG and embedded CPIO
+Excavate::Archive.new('Installer.pkg').extract(recursive_packages: true)
+----
+
+==== RPM Files
+
+RPM files contain compressed CPIO payloads:
+
+[source,ruby]
+----
+# Extract RPM and payload
+Excavate::Archive.new('package.rpm').extract(recursive_packages: true)
+----
+
+=== Combining with Other Options
+
+==== Recursive + Filter
+
+[source,ruby]
+----
+# Extract DLL files from MSI and nested CABs
+Excavate::Archive.new('installer.msi').extract(
+  recursive_packages: true,
+  filter: '**/*.dll'
+)
+----
+
+==== Recursive + Selective
+
+[source,ruby]
+----
+# Extract specific files from nested archives
+Excavate::Archive.new('installer.msi').extract(
+  recursive_packages: true,
+  files: ['data1.cab/config.ini', 'data2.cab/README.txt']
+)
+----
+
+==== Recursive + File Iteration
+
+[source,ruby]
+----
+# Process files during recursive extraction
+Excavate::Archive.new('installer.msi').files(
+  recursive_packages: true
+) do |path|
+  puts "Extracted: #{path}"
+end
+----
+
+=== Depth Handling
+
+Excavate handles arbitrary nesting depth:
+
+[source,ruby]
+----
+# Handles: archive.zip → inner.tar.gz → data.cab → files
+Excavate::Archive.new('complex.zip').extract(recursive_packages: true)
+----
+
+=== Performance Considerations
+
+Recursive extraction is more I/O intensive:
+
+* Each nested archive requires additional extraction pass
+* Disk space temporarily doubles during extraction
+* Consider filtering to reduce work
+
+[source,ruby]
+----
+# Faster: Filter early
+Excavate::Archive.new('large.msi').extract(
+  recursive_packages: true,
+  filter: '**/*.dll'
+)
+
+# Slower: Extract everything
+Excavate::Archive.new('large.msi').extract(recursive_packages: true)
+----
+
+=== CLI Usage
+
+[source,bash]
+----
+# Recursive extraction
+excavate -r installer.msi
+
+# Short form
+excavate --recursive package.pkg
+
+# Combined with filter
+excavate -r --filter "**/*.ttf" fonts.msi
+----
+
+=== Common Patterns
+
+==== Extract All from Installer
+
+[source,ruby]
+----
+# Extract everything from Windows installer
+Excavate::Archive.new('setup.msi').extract(recursive_packages: true)
+----
+
+==== Extract Fonts from MSI
+
+[source,ruby]
+----
+fonts = Excavate::Archive.new('fonts.msi').extract(
+  recursive_packages: true,
+  filter: '**/*.{ttf,otf}'
+)
+----
+
+==== Extract Executables from RPM
+
+[source,ruby]
+----
+Excavate::Archive.new('package.rpm').extract(
+  recursive_packages: true,
+  filter: '**/bin/*'
+)
+----
+
+=== Troubleshooting
+
+==== Slow Recursive Extraction
+
+* Use filters to extract only needed files
+* Check available disk space
+* Ensure target is on fast storage
+
+==== Missing Files
+
+* Verify `recursive_packages: true` is set
+* Check if files are in deeply nested archives
+* Use filter patterns to find files
+
+=== Related Topics
+
+* <<../formats/msi-format,MSI Format>>
+* <<../formats/xar-pkg-format,XAR/PKG Format>>
+* <<performance-tuning,Performance Tuning>>

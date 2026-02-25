@@ -1,0 +1,235 @@
+---
+title: Platform-Specific Issues
+parent: Troubleshooting
+nav_order: 3
+---
+
+== Platform-Specific Issues
+
+=== Purpose
+
+Solutions for OS-specific problems.
+
+=== Windows
+
+==== File Locking
+
+===== Problem
+
+Files cannot be deleted because they're locked by another process.
+
+===== Symptoms
+
+[source,text]
+----
+Errno::EACCES: Permission denied
+----
+
+===== Solution
+
+Excavate handles this automatically with retries:
+
+[source,ruby]
+----
+# Excavate retries up to 5 times with 0.2s delays
+Excavate::Archive.new('archive.zip').files do |path|
+  # Files are cleaned up even if locked
+end
+----
+
+If still failing:
+
+[source,ruby]
+----
+# Wait and retry manually
+def safe_delete(path)
+  5.times do
+    begin
+      FileUtils.rm_rf(path)
+      return true
+    rescue Errno::EACCES
+      sleep 0.5
+    end
+  end
+  false
+end
+----
+
+==== Long Paths
+
+===== Problem
+
+Windows has a 260 character path limit.
+
+===== Symptoms
+
+[source,text]
+----
+Filename too long
+----
+
+===== Solution
+
+Use shorter target paths:
+
+[source,ruby]
+----
+# Use short temp path
+target = Dir.mktmpdir('e-')  # Short prefix
+
+# Instead of long nested path
+# target = 'C:/Users/username/Documents/projects/output'
+----
+
+==== Path Separators
+
+===== Problem
+
+Mixed path separators cause issues.
+
+===== Solution
+
+Excavate handles this, but be consistent:
+
+[source,ruby]
+----
+# Use forward slashes (Ruby handles conversion)
+target = 'C:/temp/output'
+
+# Or use File.join
+target = File.join('C:', 'temp', 'output')
+----
+
+=== macOS
+
+==== Permission Denied
+
+===== Problem
+
+Cannot write to system directories.
+
+===== Solution
+
+Use user-writable locations:
+
+[source,ruby]
+----
+# Use user directory
+target = File.expand_path('~/Downloads/output')
+
+# Or temp directory
+target = Dir.mktmpdir
+----
+
+==== Quarantine
+
+===== Problem
+
+Downloaded files may be quarantined.
+
+===== Solution
+
+Remove quarantine attribute:
+
+[source,bash]
+----
+xattr -d com.apple.quarantine archive.zip
+----
+
+=== Linux
+
+==== No Special Issues
+
+Linux generally works without platform-specific issues.
+
+==== Container Environments
+
+In Docker or other containers:
+
+* Ensure sufficient disk space
+* Check /tmp is writable
+* Verify file permissions
+
+=== Cross-Platform Tips
+
+==== Use Pathname
+
+[source,ruby]
+----
+require 'pathname'
+
+# Works on all platforms
+target = Pathname.new('/path/to/output')
+archive = Excavate::Archive.new(Pathname.new('/path/to/archive.zip'))
+archive.extract(target)
+----
+
+==== Use Temp Directory
+
+[source,ruby]
+----
+# Cross-platform temp directory
+target = Dir.mktmpdir('excavate-')
+----
+
+==== Check Permissions
+
+[source,ruby]
+----
+def writable?(path)
+  File.writable?(File.dirname(path))
+end
+
+unless writable?(target)
+  raise "Cannot write to target directory"
+end
+----
+
+=== Character Encoding
+
+==== Problem
+
+Non-ASCII characters in filenames cause issues.
+
+==== Solution
+
+[source,ruby]
+----
+# Handle encoding issues
+archive.files do |path|
+  begin
+    # Try to read with UTF-8
+    content = File.read(path, encoding: 'UTF-8')
+  rescue Encoding::InvalidByteSequenceError
+    # Fall back to binary
+    content = File.binread(path)
+  end
+end
+----
+
+=== Case Sensitivity
+
+==== Problem
+
+File systems differ in case sensitivity.
+
+* Linux: Case-sensitive
+* macOS: Case-insensitive (usually)
+* Windows: Case-insensitive
+
+==== Solution
+
+Use consistent case:
+
+[source,ruby]
+----
+# Use downcase for comparison
+if path.downcase.end_with?('.txt')
+  # ...
+end
+----
+
+=== See Also
+
+* xref:../resources/compatibility.adoc[Compatibility]
+* xref:../troubleshooting/common-errors.adoc[Common Errors]

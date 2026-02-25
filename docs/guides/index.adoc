@@ -1,0 +1,64 @@
+---
+title: Guides
+nav_order: 2
+has_children: true
+---
+
+== Guides
+
+=== Purpose
+
+Comprehensive guides for working with Excavate across different use cases,
+formats, and advanced scenarios.
+
+=== Guide Categories
+
+[cols="1,4"]
+|===
+| Category | Description
+
+| <<basic-usage/extracting-files,Extracting Files>>
+| Basic and selective extraction techniques
+
+| <<formats/index,Archive Formats>>
+| Format-specific guides (CAB, MSI, RPM, TAR, etc.)
+
+| <<advanced-usage/index,Advanced Usage>>
+| Recursive extraction, error handling, performance
+
+| <<use-cases/index,Use Cases>>
+| Real-world extraction scenarios
+|===
+
+=== Learning Path
+
+For best results, follow this order:
+
+. <<basic-usage/extracting-files,Basic Extraction>> - Core extraction concepts
+. <<basic-usage/selective-extraction,Selective Extraction>> - Extract specific files
+. <<basic-usage/filter-patterns,Filter Patterns>> - Pattern-based extraction
+. <<advanced-usage/recursive-extraction,Recursive Extraction>> - Nested archives
+
+=== Format Guides
+
+Each format has specific characteristics and best practices:
+
+* <<formats/cab-format,CAB Format>> - Microsoft Cabinet files
+* <<formats/msi-format,MSI Format>> - Windows Installer packages
+* <<formats/rpm-format,RPM Format>> - Red Hat Package Manager
+* <<formats/sevenzip-format,7-Zip Format>> - High compression archives
+* <<formats/tar-format,TAR Format>> - Unix tape archives
+* <<formats/xar-pkg-format,XAR/PKG Format>> - macOS packages
+
+=== Advanced Topics
+
+For complex scenarios:
+
+* <<advanced-usage/recursive-extraction,Recursive Extraction>> - Archives within archives
+* <<advanced-usage/error-handling,Error Handling>> - Robust error recovery
+* <<advanced-usage/performance-tuning,Performance Tuning>> - Optimization tips
+
+=== Next Steps
+
+Start with <<basic-usage/extracting-files,Extracting Files>> if you're new to
+Excavate, or jump to a specific format guide for detailed information.

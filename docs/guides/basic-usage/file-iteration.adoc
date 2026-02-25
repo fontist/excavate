@@ -1,0 +1,257 @@
+---
+title: File Iteration
+parent: Basic Usage
+grand_parent: Guides
+nav_order: 4
+---
+
+== File Iteration
+
+=== Purpose
+
+This guide covers the `files` method for processing extracted files during
+extraction without managing directories manually.
+
+=== References
+
+* xref:../../reference/api.adoc[API Reference]
+
+=== Concepts
+
+The `files` method provides a convenient way to process archive contents without
+managing the extraction directory. It creates a temporary directory, extracts
+files, yields each file to your block, then cleans up automatically.
+
+=== Basic File Iteration
+
+Use the `files` method with a block:
+
+[source,ruby]
+----
+Excavate::Archive.new('archive.zip').files do |file_path|
+  puts "Found: #{file_path}"
+  puts "Size: #{File.size(file_path)}"
+end
+----
+
+=== Return Value
+
+The `files` method returns an array of values from the block:
+
+[source,ruby]
+----
+sizes = Excavate::Archive.new('archive.zip').files do |file_path|
+  File.size(file_path)
+end
+
+total_size = sizes.sum
+puts "Total extracted size: #{total_size} bytes"
+----
+
+=== Collecting Results
+
+Collect processed data from files:
+
+[source,ruby]
+----
+file_info = Excavate::Archive.new('data.tar.gz').files do |path|
+  {
+    name: File.basename(path),
+    ext: File.extname(path),
+    size: File.size(path),
+    mtime: File.mtime(path)
+  }
+end
+
+# file_info is an array of hashes
+file_info.each do |info|
+  puts "#{info[:name]}: #{info[:size]} bytes"
+end
+----
+
+=== With Options
+
+The `files` method accepts the same options as `extract`:
+
+==== Recursive Iteration
+
+[source,ruby]
+----
+Excavate::Archive.new('installer.msi').files(
+  recursive_packages: true
+) do |path|
+  puts "Extracted: #{path}"
+end
+----
+
+==== Selective Iteration
+
+[source,ruby]
+----
+Excavate::Archive.new('data.tar').files(
+  files: ['config.json', 'settings.yaml']
+) do |path|
+  content = File.read(path)
+  puts "#{path}: #{content.size} chars"
+end
+----
+
+==== Filter Iteration
+
+[source,ruby]
+----
+font_paths = Excavate::Archive.new('fonts.zip').files(
+  filter: '**/*.ttf'
+) do |path|
+  puts "Found font: #{File.basename(path)}"
+  path  # Return the path for collection
+end
+
+puts "Total fonts: #{font_paths.size}"
+----
+
+=== Temporary Directory Management
+
+The `files` method handles temporary directory lifecycle:
+
+. Creates a unique temporary directory
+. Extracts files to the temporary directory
+. Yields each file path to your block
+. Cleans up the temporary directory after the block completes
+
+[source,ruby]
+----
+# No need to manage directories
+Excavate::Archive.new('archive.zip').files do |path|
+  # Process files here
+  # Temporary directory is automatically cleaned up
+end
+----
+
+=== Windows-Safe Cleanup
+
+On Windows, files may be locked temporarily. Excavate handles this with
+automatic retries:
+
+[source,ruby]
+----
+# Windows-safe cleanup is automatic
+Excavate::Archive.new('archive.zip').files do |path|
+  # Even if file operations are slow, cleanup will succeed
+end
+----
+
+=== Processing Examples
+
+==== Analyze File Contents
+
+[source,ruby]
+----
+require 'json'
+
+json_data = Excavate::Archive.new('data.zip').files(
+  filter: '**/*.json'
+) do |path|
+  JSON.parse(File.read(path))
+end
+
+# json_data is an array of parsed JSON objects
+----
+
+==== Copy Extracted Files
+
+[source,ruby]
+----
+require 'fileutils'
+
+Excavate::Archive.new('source.zip').files(
+  filter: '**/*.txt'
+) do |path|
+  target = File.join('/permanent/location', File.basename(path))
+  FileUtils.cp(path, target)
+  puts "Copied to: #{target}"
+end
+----
+
+==== Search File Contents
+
+[source,ruby]
+----
+matches = Excavate::Archive.new('logs.tar.gz').files do |path|
+  next nil unless path.end_with?('.log')
+
+  content = File.read(path)
+  if content.include?('ERROR')
+    { file: path, error_count: content.scan('ERROR').size }
+  end
+end.compact
+
+matches.each do |match|
+  puts "#{match[:file]}: #{match[:error_count]} errors"
+end
+----
+
+==== Calculate Statistics
+
+[source,ruby]
+----
+stats = Excavate::Archive.new('archive.zip').files do |path|
+  ext = File.extname(path)
+  {
+    extension: ext,
+    size: File.size(path)
+  }
+end
+
+by_extension = stats.group_by { |s| s[:extension] }
+by_extension.each do |ext, files|
+  total = files.sum { |f| f[:size] }
+  puts "#{ext}: #{files.size} files, #{total} bytes"
+end
+----
+
+=== When to Use files vs extract
+
+.Use `files` when:
+* Processing files without keeping them permanently
+* Analyzing archive contents
+* Extracting data to copy elsewhere
+* Need automatic cleanup
+
+.Use `extract` when:
+* Files need to persist after extraction
+* Target directory needs to be preserved
+* Simple extraction to a known location
+
+=== Memory Considerations
+
+For large archives, process files one at a time:
+
+[source,ruby]
+----
+# Good: Process one file at a time
+Excavate::Archive.new('large.tar.gz').files do |path|
+  process_file(path)  # Process and move on
+end
+
+# Avoid: Loading all files into memory
+all_content = Excavate::Archive.new('large.tar.gz').files do |path|
+  File.read(path)  # Holds all content in memory
+end
+----
+
+=== CLI Alternative
+
+For simple file listing, use the CLI:
+
+[source,bash]
+----
+# Extract and list files
+excavate -r archive.zip
+find archive -type f
+----
+
+=== Next Steps
+
+* Explore <<../advanced-usage/recursive-extraction,Recursive Extraction>>
+* Learn about <<../advanced-usage/error-handling,Error Handling>>

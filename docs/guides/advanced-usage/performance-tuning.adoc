@@ -1,0 +1,264 @@
+---
+title: Performance Tuning
+parent: Advanced Usage
+grand_parent: Guides
+nav_order: 3
+---
+
+== Performance Tuning
+
+=== Purpose
+
+This guide covers optimization techniques for efficient archive extraction with
+Excavate.
+
+=== References
+
+* <<recursive-extraction,Recursive Extraction>>
+* xref:../basic-usage/filter-patterns.adoc[Filter Patterns]
+
+=== Concepts
+
+Excavate is designed for efficiency, but large archives or batch processing can
+benefit from optimization techniques.
+
+=== General Tips
+
+==== Use Filters
+
+Extract only what you need:
+
+[source,ruby]
+----
+# Slow: Extract everything
+Excavate::Archive.new('large.zip').extract
+
+# Fast: Extract only needed files
+Excavate::Archive.new('large.zip').extract(filter: '**/*.txt')
+----
+
+==== Process Files During Extraction
+
+Use the `files` method to avoid storing everything:
+
+[source,ruby]
+----
+# Memory-efficient processing
+Excavate::Archive.new('large.tar.gz').files do |path|
+  process_file(path)
+  # File is cleaned up after processing
+end
+----
+
+==== Choose the Right Target
+
+Extract to fast storage:
+
+[source,ruby]
+----
+# Slow: Network mount
+Excavate::Archive.new('archive.zip').extract('/network/share/output')
+
+# Fast: Local SSD
+Excavate::Archive.new('archive.zip').extract('/tmp/output')
+----
+
+=== Recursive Extraction Optimization
+
+==== Filter Early
+
+Apply filters to reduce nested extraction:
+
+[source,ruby]
+----
+# Optimized: Filter applied during recursive extraction
+Excavate::Archive.new('installer.msi').extract(
+  recursive_packages: true,
+  filter: '**/*.dll'
+)
+
+# Slower: Extract all then filter
+Excavate::Archive.new('installer.msi').extract(recursive_packages: true)
+dlls = Dir.glob('installer/**/*.dll')
+----
+
+==== Batch Similar Archives
+
+Process multiple archives efficiently:
+
+[source,ruby]
+----
+# Process multiple MSIs
+archives = Dir.glob('installers/*.msi')
+
+archives.each do |archive_path|
+  Excavate::Archive.new(archive_path).extract(
+    recursive_packages: true,
+    filter: '**/*.dll'
+  )
+end
+----
+
+=== Memory Optimization
+
+==== Stream Processing
+
+Process files without holding all in memory:
+
+[source,ruby]
+----
+# Good: Process one file at a time
+Excavate::Archive.new('large.zip').files do |path|
+  # Process and release
+  analyze_file(path)
+end
+
+# Avoid: Load all into memory
+all_content = Excavate::Archive.new('large.zip').files do |path|
+  File.read(path)  # Accumulates in memory
+end
+----
+
+==== Selective Loading
+
+Extract only needed files:
+
+[source,ruby]
+----
+# Extract only what you need
+Excavate::Archive.new('data.tar.gz').extract(
+  files: ['config.json', 'metadata.yaml']
+)
+----
+
+=== Disk Space Optimization
+
+==== Temporary Processing
+
+Use the `files` method for temporary extraction:
+
+[source,ruby]
+----
+# Automatic cleanup
+Excavate::Archive.new('archive.zip').files do |path|
+  result = analyze(path)
+  # Temporary files cleaned up automatically
+  result
+end
+----
+
+==== Copy Only Needed Files
+
+[source,ruby]
+----
+require 'fileutils'
+
+# Extract only needed files to permanent storage
+Excavate::Archive.new('archive.zip').files(
+  filter: '**/*.{txt,md}'
+) do |path|
+  target = File.join('/permanent', File.basename(path))
+  FileUtils.cp(path, target)
+end
+----
+
+=== Batch Processing
+
+==== Parallel Processing
+
+For independent archives:
+
+[source,ruby]
+----
+require 'parallel'
+
+archives = Dir.glob('archives/*.zip')
+
+Parallel.each(archives, in_threads: 4) do |archive_path|
+  begin
+    Excavate::Archive.new(archive_path).extract(
+      filter: '**/*.txt'
+    )
+  rescue Excavate::Error => e
+    puts "Failed: #{archive_path} - #{e.message}"
+  end
+end
+----
+
+==== Error-Resilient Batch
+
+Continue processing after errors:
+
+[source,ruby]
+----
+results = []
+
+Dir.glob('archives/*').each do |archive_path|
+  begin
+    archive = Excavate::Archive.new(archive_path)
+    archive.extract(recursive_packages: true)
+    results << { path: archive_path, success: true }
+  rescue Excavate::Error => e
+    results << { path: archive_path, success: false, error: e.message }
+  end
+end
+
+# Report results
+failed = results.reject { |r| r[:success] }
+puts "Processed: #{results.size}, Failed: #{failed.size}"
+----
+
+=== Platform-Specific Tips
+
+==== Windows
+
+* Ensure sufficient disk space on target drive
+* Avoid extracting to system directories
+* Handle file locking gracefully
+
+==== Linux/macOS
+
+* Use fast local filesystems (avoid network mounts)
+* Consider tmpfs for temporary extraction
+* Check ulimits for large numbers of files
+
+=== Monitoring Performance
+
+==== Simple Timing
+
+[source,ruby]
+----
+require 'benchmark'
+
+time = Benchmark.measure do
+  Excavate::Archive.new('large.zip').extract(
+    recursive_packages: true,
+    filter: '**/*.txt'
+  )
+end
+
+puts "Extraction took: #{time.real} seconds"
+----
+
+==== Progress Tracking
+
+[source,ruby]
+----
+count = 0
+start = Time.now
+
+Excavate::Archive.new('archive.zip').files do |path|
+  count += 1
+  if count % 100 == 0
+    elapsed = Time.now - start
+    rate = count / elapsed
+    puts "Processed #{count} files (#{rate.round(1)}/sec)"
+  end
+end
+----
+
+=== Related Topics
+
+* <<recursive-extraction,Recursive Extraction>>
+* xref:../basic-usage/filter-patterns.adoc[Filter Patterns]
+* xref:../basic-usage/file-iteration.adoc[File Iteration]

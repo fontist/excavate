@@ -1,0 +1,207 @@
+---
+title: Corrupted Files
+parent: Troubleshooting
+nav_order: 2
+---
+
+== Corrupted Files
+
+=== Purpose
+
+Handling corrupted or damaged archives.
+
+=== Types of Corruption
+
+==== Header Corruption
+
+The archive header is damaged, preventing format detection.
+
+==== Data Corruption
+
+The compressed data is damaged, causing decompression failures.
+
+==== Partial Download
+
+The archive is incomplete due to interrupted download.
+
+=== Detection
+
+==== Check File Size
+
+[source,ruby]
+----
+expected_size = 1_000_000  # From download source
+actual_size = File.size(archive_path)
+
+if actual_size < expected_size
+  puts "File may be incomplete"
+end
+----
+
+==== Check File Type
+
+[source,bash]
+----
+file archive.zip
+# Expected: Zip archive data
+# If shows: data - file may be corrupted
+----
+
+==== Try Extraction
+
+[source,ruby]
+----
+begin
+  Excavate::Archive.new(archive).extract
+rescue Excavate::UnknownArchiveError
+  puts "Archive is corrupted or invalid"
+rescue Excavate::Error => e
+  puts "Extraction error: #{e.message}"
+end
+----
+
+=== Recovery Strategies
+
+==== CAB Salvage Mode
+
+CAB extraction uses salvage mode automatically:
+
+[source,ruby]
+----
+# Cabriolet enables salvage mode
+# Damaged files are extracted with warnings
+Excavate::Archive.new('damaged.cab').extract
+----
+
+==== Partial Extraction
+
+Extract what's possible:
+
+[source,ruby]
+----
+archive = Excavate::Archive.new('damaged.zip')
+
+extracted = []
+failed = []
+
+archive.files do |path|
+  begin
+    # Try to copy file
+    FileUtils.cp(path, target)
+    extracted << path
+  rescue => e
+    failed << { path: path, error: e.message }
+  end
+end
+
+puts "Extracted: #{extracted.size}"
+puts "Failed: #{failed.size}"
+----
+
+==== Re-download Archive
+
+If the source is available:
+
+[source,ruby]
+----
+def verify_and_extract(url, expected_size)
+  archive_path = download(url)
+
+  if File.size(archive_path) != expected_size
+    raise "Download incomplete"
+  end
+
+  Excavate::Archive.new(archive_path).extract
+end
+----
+
+=== Working with Partial Data
+
+==== Extract Valid Files
+
+[source,ruby]
+----
+# Extract files that are not corrupted
+archive.files(filter: '**/*.txt') do |path|
+  begin
+    content = File.read(path)
+    if content.valid_encoding?
+      # File is valid
+      save_file(path, content)
+    end
+  rescue => e
+    puts "Skipping corrupted: #{path}"
+  end
+end
+----
+
+==== Check Checksums
+
+If checksums are available:
+
+[source,ruby]
+----
+require 'digest'
+
+def verify_checksum(file, expected_md5)
+  actual = Digest::MD5.file(file).hexdigest
+  actual == expected_md5
+end
+----
+
+=== Prevention
+
+==== Verify Downloads
+
+[source,ruby]
+----
+def download_with_verify(url, expected_size)
+  # Download file
+  file = download(url)
+
+  # Verify size
+  if File.size(file) != expected_size
+    File.delete(file)
+    raise "Download verification failed"
+  end
+
+  file
+end
+----
+
+==== Check Before Extraction
+
+[source,ruby]
+----
+def safe_extract(path)
+  # Basic checks
+  raise "File not found" unless File.exist?(path)
+  raise "File is empty" if File.zero?(path)
+
+  # Try extraction
+  begin
+    Excavate::Archive.new(path).extract
+  rescue Excavate::UnknownArchiveError
+    raise "File is not a valid archive"
+  end
+end
+----
+
+=== When to Give Up
+
+Some archives cannot be recovered:
+
+* Header completely destroyed
+* Multiple sections corrupted
+* Encryption keys lost
+
+In these cases:
+
+. Try native tools (7z, unzip) for recovery
+. Contact the archive source for replacement
+. Use backup if available
+
+=== See Also
+
+* xref:../troubleshooting/common-errors.adoc[Common Errors]
+* xref:../guides/formats/cab-format.adoc[CAB Format] (salvage mode)

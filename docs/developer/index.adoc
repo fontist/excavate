@@ -1,0 +1,69 @@
+---
+title: Developer Documentation
+nav_order: 6
+has_children: true
+---
+
+== Developer Documentation
+
+=== Purpose
+
+Documentation for developers contributing to or extending Excavate.
+
+=== Topics
+
+[cols="1,4"]
+|===
+| Topic | Description
+
+| <<architecture/index,Architecture>>
+| Design principles and patterns
+
+| <<contributing,Contributing>>
+| How to contribute
+
+| <<code-style,Code Style>>
+| Coding standards
+
+| <<testing,Testing>>
+| Running and writing tests
+
+| <<debugging,Debugging>>
+| Debugging techniques
+
+| <<release-process,Release Process>>
+| How releases work
+|===
+
+=== Quick Start for Contributors
+
+[source,bash]
+----
+# Clone repository
+git clone https://github.com/omnizip/excavate.git
+cd excavate
+
+# Install dependencies
+bundle install
+
+# Run tests
+bundle exec rspec
+
+# Run linter
+bundle exec rubocop
+----
+
+=== Architecture Overview
+
+Excavate follows object-oriented design principles:
+
+* Facade pattern (`Excavate::Archive`)
+* Strategy pattern (format-specific extractors)
+* Registry pattern (extension mapping)
+
+See <<architecture/index,Architecture>> for detailed documentation.
+
+=== Next Steps
+
+Start with <<architecture/index,Architecture>> to understand the codebase
+structure, then explore specific topics.

@@ -1,0 +1,262 @@
+---
+title: Quick Reference
+parent: Resources
+nav_order: 1
+---
+
+== Quick Reference
+
+=== Purpose
+
+Quick reference for common Excavate operations.
+
+=== CLI Commands
+
+[source,bash]
+----
+# Basic extraction
+excavate archive.zip
+
+# Recursive extraction
+excavate -r installer.msi
+
+# Extract specific files
+excavate data.tar.gz config.json readme.txt
+
+# Filter by pattern
+excavate --filter "**/*.ttf" fonts.zip
+
+# Combined options
+excavate -r --filter "**/*.dll" installer.msi
+----
+
+=== CLI Options
+
+[cols="1,1,3"]
+|===
+| Option | Short | Description
+
+| `--recursive`
+| `-r`
+| Extract nested archives
+
+| `--filter PATTERN`
+|
+| Extract matching files only
+
+| `--help`
+| `-h`
+| Show help message
+|===
+
+=== CLI Exit Codes
+
+[cols="1,3"]
+|===
+| Code | Meaning
+
+| 0
+| Success
+
+| 1
+| Unknown error
+
+| 2
+| Target exists
+
+| 3
+| Target not empty
+
+| 4
+| File not found
+|===
+
+=== API Methods
+
+==== Archive Class
+
+[source,ruby]
+----
+# Create archive instance
+archive = Excavate::Archive.new(path)
+
+# Extract to directory
+archive.extract                    # Auto-creates directory
+archive.extract('/path/to/target') # Specific directory
+
+# Extract with options
+archive.extract(
+  recursive_packages: true,        # Extract nested archives
+  files: ['file1.txt', 'file2.txt'], # Specific files
+  filter: '**/*.rb'                # Pattern matching
+)
+
+# Iterate over files
+archive.files do |path|
+  puts path
+end
+----
+
+=== API Options
+
+[cols="1,2,2"]
+|===
+| Option | Type | Description
+
+| `target`
+| String
+| Target directory path
+
+| `recursive_packages`
+| Boolean
+| Extract nested archives
+
+| `files`
+| Array
+| Specific files to extract
+
+| `filter`
+| String
+| Glob pattern for filtering
+|===
+
+=== Supported Formats
+
+[cols="1,1"]
+|===
+| Extension | Format
+
+| `.zip`
+| ZIP
+
+| `.tar`
+| TAR
+
+| `.tar.gz`, `.tgz`
+| TAR + GZIP
+
+| `.tar.xz`, `.txz`
+| TAR + XZ
+
+| `.7z`
+| 7-Zip
+
+| `.cab`
+| Microsoft CAB
+
+| `.msi`
+| Windows Installer
+
+| `.rpm`
+| RPM Package
+
+| `.pkg`, `.xar`
+| macOS Package
+|===
+
+=== Error Classes
+
+[source,ruby]
+----
+Excavate::Error              # Base class
+Excavate::TargetExistsError  # Target already exists
+Excavate::TargetNotEmptyError # Target not empty
+Excavate::TargetNotFoundError # File not found
+Excavate::UnknownArchiveError # Unknown format
+----
+
+=== Error Handling
+
+[source,ruby]
+----
+begin
+  archive.extract(target)
+rescue Excavate::TargetExistsError
+  # Handle existing target
+rescue Excavate::TargetNotFoundError
+  # Handle missing file
+rescue Excavate::UnknownArchiveError
+  # Handle unknown format
+rescue Excavate::Error => e
+  # Handle any Excavate error
+end
+----
+
+=== Filter Patterns
+
+[cols="1,3"]
+|===
+| Pattern | Matches
+
+| `*.txt`
+| .txt files at root
+
+| `**/*.txt`
+| .txt files anywhere
+
+| `src/**/*.rb`
+| .rb files under src/
+
+| `**/*.{json,yaml}`
+| .json or .yaml files
+
+| `**/test_*.rb`
+| Test files anywhere
+|===
+
+=== Common Patterns
+
+==== Extract MSI
+
+[source,ruby]
+----
+Excavate::Archive.new('installer.msi').extract(
+  recursive_packages: true
+)
+----
+
+==== Extract Fonts
+
+[source,ruby]
+----
+Excavate::Archive.new('fonts.zip').extract(
+  filter: '**/*.{ttf,otf}'
+)
+----
+
+==== Process Files
+
+[source,ruby]
+----
+Excavate::Archive.new('data.zip').files do |path|
+  puts "#{path}: #{File.size(path)} bytes"
+end
+----
+
+==== Safe Extraction
+
+[source,ruby]
+----
+def safe_extract(path, target)
+  FileUtils.rm_rf(target) if File.exist?(target)
+  Excavate::Archive.new(path).extract(target)
+end
+----
+
+=== Dependencies
+
+All pure Ruby:
+
+* `omnizip` ~> 0.3.8
+* `cabriolet` ~> 0.2.2
+* `thor` ~> 1.0
+
+=== Platform Support
+
+* Ruby: MRI 2.7+, JRuby, TruffleRuby
+* OS: Linux, macOS, Windows, BSD
+
+=== Related Topics
+
+* xref:../reference/api.adoc[API Reference]
+* xref:../reference/cli.adoc[CLI Reference]

@@ -1,0 +1,149 @@
+---
+title: Font Extraction
+parent: Use Cases
+grand_parent: Guides
+nav_order: 1
+---
+
+== Font Extraction
+
+=== Purpose
+
+This guide covers extracting font files from various archive formats and
+installers.
+
+=== References
+
+* <<../formats/msi-format,MSI Format>>
+* <<../formats/cab-format,CAB Format>>
+
+=== Concepts
+
+Fonts are often distributed in archive formats including ZIP, MSI installers,
+and CAB files. Excavate can extract fonts from all these formats.
+
+=== Extracting from ZIP
+
+[source,ruby]
+----
+# Extract all TrueType fonts
+fonts = Excavate::Archive.new('fonts.zip').extract(filter: '**/*.ttf')
+
+# Extract multiple font types
+fonts = Excavate::Archive.new('fonts.zip').extract(
+  filter: '**/*.{ttf,otf,woff,woff2}'
+)
+----
+
+=== Extracting from MSI Installers
+
+Windows font installers are often MSI files containing CAB archives:
+
+[source,ruby]
+----
+# Extract fonts from MSI
+fonts = Excavate::Archive.new('fonts.msi').extract(
+  recursive_packages: true,
+  filter: '**/*.{ttf,otf}'
+)
+
+puts "Extracted #{fonts.size} fonts"
+----
+
+=== Extracting from CAB Files
+
+[source,ruby]
+----
+# Extract fonts from CAB archive
+fonts = Excavate::Archive.new('fonts.cab').extract(
+  filter: '**/*.{ttf,otf}'
+)
+----
+
+=== Font Processing Workflow
+
+==== Collect Font Information
+
+[source,ruby]
+----
+font_info = Excavate::Archive.new('fonts.zip').files(
+  filter: '**/*.{ttf,otf}'
+) do |path|
+  {
+    name: File.basename(path),
+    size: File.size(path),
+    ext: File.extname(path).downcase
+  }
+end
+
+# Group by type
+by_type = font_info.group_by { |f| f[:ext] }
+by_type.each do |ext, fonts|
+  puts "#{ext}: #{fonts.size} fonts"
+end
+----
+
+==== Copy to System Fonts Directory
+
+[source,ruby]
+----
+require 'fileutils'
+
+# Extract and copy fonts
+Excavate::Archive.new('fonts.msi').files(
+  recursive_packages: true,
+  filter: '**/*.{ttf,otf}'
+) do |source|
+  font_name = File.basename(source)
+  target = File.join('/Library/Fonts', font_name)  # macOS
+
+  FileUtils.cp(source, target)
+  puts "Installed: #{font_name}"
+end
+----
+
+=== CLI Usage
+
+[source,bash]
+----
+# Extract fonts from MSI
+excavate -r --filter "**/*.ttf" fonts.msi
+
+# Extract from ZIP
+excavate --filter "**/*.{ttf,otf}" fonts.zip
+----
+
+=== Common Font Sources
+
+.Microsoft Fonts MSI:: Often distributed as MSI installers
+.Google Fonts ZIP:: Downloaded as ZIP archives
+.Adobe Fonts:: May come in various archive formats
+.System Font Backups:: CAB or ZIP format
+
+=== Example: Extract All Fonts from Directory
+
+[source,ruby]
+----
+# Process all archives in a directory
+all_fonts = []
+
+Dir.glob('**/*.{zip,msi,cab}').each do |archive_path|
+  fonts = Excavate::Archive.new(archive_path).files(
+    recursive_packages: true,
+    filter: '**/*.{ttf,otf}'
+  ) do |path|
+    File.basename(path)
+  end
+
+  all_fonts.concat(fonts)
+  puts "#{archive_path}: #{fonts.size} fonts"
+end
+
+puts "Total fonts: #{all_fonts.size}"
+----
+
+=== Related Topics
+
+* <<../formats/msi-format,MSI Format>>
+* <<../formats/cab-format,CAB Format>>
+* <<../advanced-usage/recursive-extraction,Recursive Extraction>>

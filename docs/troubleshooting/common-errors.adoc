@@ -1,0 +1,223 @@
+---
+title: Common Errors
+parent: Troubleshooting
+nav_order: 1
+---
+
+== Common Errors
+
+=== Purpose
+
+Solutions for frequently encountered errors.
+
+=== TargetExistsError
+
+==== Description
+
+The target file or directory already exists.
+
+==== Error Message
+
+[source,text]
+----
+Target file `package` already exists.
+----
+
+==== Causes
+
+* Previous extraction created the directory
+* Running extraction twice
+* Directory exists from other operations
+
+==== Solutions
+
+.Remove before extracting
+[source,ruby]
+----
+target = 'package'
+FileUtils.rm_rf(target) if File.exist?(target)
+Excavate::Archive.new('package.zip').extract(target)
+----
+
+.Use different target
+[source,ruby]
+----
+target = "package_#{Time.now.to_i}"
+Excavate::Archive.new('package.zip').extract(target)
+----
+
+=== TargetNotEmptyError
+
+==== Description
+
+The target directory exists and contains files.
+
+==== Error Message
+
+[source,text]
+----
+Target directory `output` is not empty.
+----
+
+==== Causes
+
+* Partial extraction left files
+* Directory used for other purposes
+
+==== Solutions
+
+.Clean directory
+[source,ruby]
+----
+FileUtils.rm_rf(Dir.glob("#{target}/*"))
+Excavate::Archive.new('archive.zip').extract(target)
+----
+
+.Use clean target
+[source,ruby]
+----
+target = Dir.mktmpdir('extract-')
+Excavate::Archive.new('archive.zip').extract(target)
+----
+
+=== TargetNotFoundError
+
+==== Description
+
+Specified file or filter pattern matched nothing.
+
+==== Error Message
+
+[source,text]
+----
+File `config.json` not found.
+----
+or
+[source,text]
+----
+Filter `*.pdf` matched no file.
+----
+
+==== Causes
+
+* Wrong file path
+* Wrong filter pattern
+* File not in archive
+
+==== Solutions
+
+.List archive contents first
+[source,ruby]
+----
+archive = Excavate::Archive.new('data.zip')
+archive.files { |path| puts path }
+----
+
+.Check file exists
+[source,ruby]
+----
+files = []
+archive.files { |path| files << path }
+puts files.include?('config.json')
+----
+
+.Adjust filter pattern
+[source,ruby]
+----
+# Try broader pattern
+archive.extract(filter: '**/*.json')  # Instead of '*.json'
+----
+
+=== UnknownArchiveError
+
+==== Description
+
+The archive format is not recognized.
+
+==== Error Message
+
+[source,text]
+----
+Could not unarchive `unknown.dat`.
+----
+
+==== Causes
+
+* Wrong file extension
+* Corrupted file
+* Unsupported format
+
+==== Solutions
+
+.Check extension
+[source,ruby]
+----
+puts File.extname(archive_path)
+# Should be .zip, .tar, .msi, etc.
+----
+
+.Check file type
+[source,bash]
+----
+file unknown.dat
+# Shows actual file type
+----
+
+.Rename if needed
+[source,ruby]
+----
+# If file is actually a ZIP
+File.rename('unknown.dat', 'archive.zip')
+Excavate::Archive.new('archive.zip').extract
+----
+
+=== General Error Handling
+
+[source,ruby]
+----
+begin
+  archive = Excavate::Archive.new(path)
+  archive.extract(target)
+rescue Excavate::TargetExistsError => e
+  puts "Target exists, removing..."
+  FileUtils.rm_rf(target)
+  retry
+rescue Excavate::TargetNotEmptyError => e
+  puts "Target not empty, cleaning..."
+  FileUtils.rm_rf(Dir.glob("#{target}/*"))
+  retry
+rescue Excavate::TargetNotFoundError => e
+  puts "File not found: #{e.message}"
+rescue Excavate::UnknownArchiveError => e
+  puts "Unknown format: #{e.message}"
+rescue Excavate::Error => e
+  puts "Extraction failed: #{e.message}"
+end
+----
+
+=== CLI Exit Codes
+
+[cols="1,3"]
+|===
+| Code | Meaning
+
+| 0
+| Success
+
+| 1
+| Unknown error
+
+| 2
+| TargetExistsError
+
+| 3
+| TargetNotEmptyError
+
+| 4
+| TargetNotFoundError
+|===
+
+=== See Also
+
+* xref:../reference/error-classes.adoc[Error Classes Reference]
+* xref:../guides/advanced-usage/error-handling.adoc[Error Handling Guide]

@@ -1,8 +1,10 @@
 = Excavate: Extraction of nested archives
 
 image:https://img.shields.io/gem/v/excavate.svg["Gem Version", link="https://rubygems.org/gems/excavate"]
-image:https://codeclimate.com/github/fontist/excavate/badges/gpa.svg["Code Climate", link="https://codeclimate.com/github/fontist/excavate"]
-image:https://github.com/fontist/excavate/workflows/rake/badge.svg["Build Status", link="https://github.com/fontist/excavate/actions?workflow=rake"]
+image:https://img.shields.io/github/license/omnizip/excavate.svg[License]
+image:https://github.com/omnizip/excavate/workflows/rake/badge.svg["Build Status", link="https://github.com/omnizip/excavate/actions?workflow=rake"]
+
+**Part of the Omnizip Suite** -- https://omnizip.github.io[Pure Ruby compression libraries]
 
 **As of version 0.3.9, Excavate is a 100% pure Ruby gem with no compiled
 dependencies.**
@@ -19,7 +21,7 @@ This means:
 
 The migration to pure Ruby was achieved by replacing native library dependencies
 with the https://github.com/omnizip/omnizip[Omnizip] and
-https://github.com/fontist/cabriolet[Cabriolet] gems, which provide pure Ruby
+https://github.com/omnizip/cabriolet[Cabriolet] gems, which provide pure Ruby
 implementations of compression algorithms and archive formats.
 
 == Purpose
@@ -612,7 +614,7 @@ copyright covering the contribution to use the contribution by all means.
 
 Here are a few technical guidelines to follow:
 
-. Open an https://github.com/fontist/excavate/issues[issue] to discuss a new
+. Open an https://github.com/omnizip/excavate/issues[issue] to discuss a new
 feature.
 . Write tests to support your new feature.
 . Make sure the entire test suite passes locally and on CI.

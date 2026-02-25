@@ -1,0 +1,130 @@
+---
+title: Recursive Extraction
+parent: Concepts
+nav_order: 2
+---
+
+== Recursive Extraction
+
+=== Purpose
+
+Understanding how Excavate handles nested archives automatically.
+
+=== Concepts
+
+Recursive extraction is the process of detecting and extracting archives within
+archives, continuing until no more nested archives are found.
+
+=== The Problem
+
+Many archive formats contain other archives:
+
+[source]
+----
+installer.msi
+├── data1.cab      # Nested CAB archive
+├── data2.cab      # Nested CAB archive
+└── resources/
+    └── fonts.zip  # Nested ZIP archive
+----
+
+Without recursive extraction, you would need to:
+
+. Extract the MSI
+. Identify the CAB files
+. Extract each CAB
+. Identify any further nested archives
+. Repeat
+
+=== The Solution
+
+With `recursive_packages: true`, Excavate handles this automatically:
+
+[source,ruby]
+----
+Excavate::Archive.new('installer.msi').extract(recursive_packages: true)
+----
+
+=== How It Works
+
+The recursive extraction algorithm:
+
+[source]
+----
+1. Extract top-level archive
+2. For each extracted file:
+   a. Check if file is an archive (by extension)
+   b. If yes, extract it
+   c. Replace archive file with extracted contents
+   d. Recursively check new files
+3. Repeat until no archives found
+----
+
+=== Supported Nested Formats
+
+Excavate can recursively extract any supported format within any other:
+
+* MSI → CAB
+* PKG → CPIO.GZ
+* RPM → CPIO.GZ
+* ZIP → any format
+* TAR.GZ → any format
+* 7-Zip → any format
+
+=== Example Flow
+
+[source]
+----
+Installer.pkg (XAR)
+    │
+    ▼ Extract XAR
+Package.pkg/
+├── Distribution
+└── Payload (CPIO.GZ)
+    │
+    ▼ Extract CPIO.GZ
+Applications/
+└── App.app/
+    └── Resources/
+        └── data.zip
+            │
+            ▼ Extract ZIP
+        config/
+        └── settings.json
+----
+
+=== When to Use
+
+.Use recursive extraction when:
+* Working with installers (MSI, PKG, RPM)
+* Processing archives that may contain other archives
+* You need all files, not the intermediate archives
+
+.Use non-recursive when:
+* You only need the top-level contents
+* Processing speed is critical
+* You want to examine the nested archives themselves
+
+=== Performance Impact
+
+Recursive extraction requires:
+
+* Multiple extraction passes
+* Additional temporary disk space
+* More I/O operations
+
+For large archives, consider using filters to reduce work:
+
+[source,ruby]
+----
+# Efficient: Extract only needed files
+Excavate::Archive.new('large.msi').extract(
+  recursive_packages: true,
+  filter: '**/*.dll'
+)
+----
+
+=== See Also
+
+* xref:../guides/advanced-usage/recursive-extraction.adoc[Recursive Extraction Guide]
+* xref:../guides/formats/msi-format.adoc[MSI Format]

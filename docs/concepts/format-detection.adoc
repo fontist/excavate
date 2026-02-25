@@ -1,0 +1,131 @@
+---
+title: Format Detection
+parent: Concepts
+nav_order: 3
+---
+
+== Format Detection
+
+=== Purpose
+
+Understanding how Excavate identifies archive formats.
+
+=== Concepts
+
+Format detection is the process of determining which extractor to use for a
+given file. Excavate uses file extension as the primary detection method.
+
+=== Extension-Based Detection
+
+Excavate maps file extensions to extractors:
+
+[source,ruby]
+----
+TYPES = {
+  "cab"  => CabExtractor,
+  "cpio" => CpioExtractor,
+  "exe"  => SevenZipExtractor,
+  "gz"   => GzipExtractor,
+  "msi"  => OleExtractor,
+  "pkg"  => XarExtractor,
+  "rpm"  => RpmExtractor,
+  "tar"  => TarExtractor,
+  "xz"   => XzExtractor,
+  "zip"  => ZipExtractor
+}
+----
+
+=== Compound Extensions
+
+Some formats use compound extensions:
+
+* `.tar.gz` - TAR + GZIP
+* `.tar.xz` - TAR + XZ
+* `.tgz` - Short for `.tar.gz`
+* `.txz` - Short for `.tar.xz`
+
+Excavate handles these automatically by extracting layers in sequence.
+
+=== Special Cases
+
+==== EXE Files
+
+EXE files may be 7-Zip or CAB self-extracting archives:
+
+[source,ruby]
+----
+# Try 7-Zip first
+# If fails, try CAB
+Excavate::Archive.new('installer.exe').extract
+----
+
+==== GZIP Verification
+
+For GZIP files, Excavate verifies magic bytes:
+
+[source,ruby]
+----
+# Checks for \x1F\x8B magic bytes
+# Prevents extracting non-GZIP files with .gz extension
+Excavate::Archive.new('file.gz').extract
+----
+
+=== Magic Byte Detection
+
+Limited magic byte detection is available via `FileMagic`:
+
+[source,ruby]
+----
+format = Excavate::FileMagic.detect('archive.cab')
+# => :cab
+
+format = Excavate::FileMagic.detect('file.gz')
+# => :gzip
+----
+
+Supported magic byte detection:
+
+[cols="1,2,1"]
+|===
+| Format | Magic Bytes | Return
+
+| CAB
+| `MSCF\x00\x00\x00\x00`
+| `:cab`
+
+| GZIP
+| `\x1F\x8B`
+| `:gzip`
+
+| XZ
+| `\xFD7zXZ\x00`
+| `:xz`
+|===
+
+=== Limitations
+
+Extension-based detection has limitations:
+
+* Files must have correct extensions
+* Renamed files may not extract properly
+* Content-based detection is limited
+
+Workarounds:
+
+[source,ruby]
+----
+# Rename file to correct extension
+File.rename('unknown.dat', 'archive.zip')
+Excavate::Archive.new('archive.zip').extract
+----
+
+=== Best Practices
+
+* Ensure files have correct extensions
+* Use `.tar.gz` not `.tgz` for clarity
+* Verify format if extraction fails
+
+=== See Also
+
+* xref:../reference/api.adoc[API Reference]
+* xref:../guides/formats/index.adoc[Format Guides]
