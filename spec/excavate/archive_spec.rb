@@ -188,6 +188,21 @@ RSpec.describe Excavate::Archive do
       end
     end
 
+    context "particular file in nested archive with auto-enabled recursion" do
+      let(:archive_example) { "multi_nested.zip" }
+
+      it "yields only particular file without explicit recursive_packages" do
+        files = []
+        described_class.new(archive)
+          .files(files: ["level1.zip/level2.zip/level3.zip/file_at_deepest.txt"]) do |f|
+            files << f
+        end
+
+        expect(files.size).to be 1
+        expect(files).to include(include("file_at_deepest.txt"))
+      end
+    end
+
     context "filter is passed" do
       let(:archive_example) { "several_files.zip" }
 
@@ -224,6 +239,101 @@ RSpec.describe Excavate::Archive do
         files = described_class.new(archive).extract(
           files: ["several_files.zip/file2"],
           recursive_packages: true,
+        )
+
+        expect(files.size).to eq 1
+        expect(files.first).to end_with("file2")
+      end
+    end
+
+    context "particular file in a nested archive with auto-enabled recursion" do
+      let(:archive_example) { "nested_archives.zip" }
+
+      it "yields only specified file without explicit recursive_packages" do
+        files = described_class.new(archive).extract(
+          files: ["several_files.zip/file2"],
+        )
+
+        expect(files.size).to eq 1
+        expect(files.first).to end_with("file2")
+      end
+    end
+
+    context "multi-level nested archives" do
+      let(:archive_example) { "multi_nested.zip" }
+
+      it "extracts file from root level" do
+        files = described_class.new(archive).extract(
+          files: ["file_at_root.txt"],
+        )
+
+        expect(files.size).to eq 1
+        expect(files.first).to end_with("file_at_root.txt")
+      end
+
+      it "extracts file from level 1 (one level deep)" do
+        files = described_class.new(archive).extract(
+          files: ["level1.zip/file_at_level1.txt"],
+        )
+
+        expect(files.size).to eq 1
+        expect(files.first).to end_with("file_at_level1.txt")
+      end
+
+      it "extracts file from level 2 (two levels deep)" do
+        files = described_class.new(archive).extract(
+          files: ["level1.zip/level2.zip/file_at_level2.txt"],
+        )
+
+        expect(files.size).to eq 1
+        expect(files.first).to end_with("file_at_level2.txt")
+      end
+
+      it "extracts file from level 3 (three levels deep)" do
+        files = described_class.new(archive).extract(
+          files: ["level1.zip/level2.zip/level3.zip/file_at_deepest.txt"],
+        )
+
+        expect(files.size).to eq 1
+        expect(files.first).to end_with("file_at_deepest.txt")
+      end
+
+      it "extracts files from multiple nesting levels in one call" do
+        files = described_class.new(archive).extract(
+          files: [
+            "file_at_root.txt",
+            "level1.zip/file_at_level1.txt",
+            "level1.zip/level2.zip/file_at_level2.txt",
+            "level1.zip/level2.zip/level3.zip/file_at_deepest.txt",
+          ],
+        )
+
+        expect(files.size).to eq 4
+        basenames = files.map { |f| File.basename(f) }
+        expect(basenames).to contain_exactly(
+          "file_at_root.txt",
+          "file_at_level1.txt",
+          "file_at_level2.txt",
+          "file_at_deepest.txt",
+        )
+      end
+
+      it "raises TargetNotFoundError for non-existent multi-level path" do
+        expect do
+          described_class.new(archive).extract(
+            files: ["level1.zip/level2.zip/non_existent.txt"],
+          )
+        end.to raise_error(Excavate::TargetNotFoundError)
+      end
+    end
+
+    context "backward compatibility with explicit recursive_packages: false" do
+      let(:archive_example) { "several_files.zip" }
+
+      it "still works for non-nested extraction" do
+        files = described_class.new(archive).extract(
+          files: ["file2"],
+          recursive_packages: false,
         )
 
         expect(files.size).to eq 1
