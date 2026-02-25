@@ -52,9 +52,10 @@ Parameters::
 `target`:: (optional) Target directory path. If omitted, creates a directory
 with the archive's base name in the current directory.
 `recursive_packages`:: (optional) Boolean. When `true`, recursively extracts
-nested archives. Default: `false`.
+nested archives. Default: `false`. NOTE: Automatically set to `true` when
+`files:` option is provided.
 `files`:: (optional) Array of file paths to extract. If specified, only
-these files are extracted.
+these files are extracted. Enables `recursive_packages` automatically.
 `filter`:: (optional) Glob pattern string. If specified, only matching
 files are extracted.
 
@@ -86,6 +87,12 @@ Excavate::Archive.new("installer.msi").extract(recursive_packages: true)
 Excavate::Archive.new("data.tar").extract(files: ["config.json"])
 # => ["/path/to/config.json"]
 
+# Multi-level nested extraction (recursive_packages auto-enabled)
+Excavate::Archive.new("bundle.zip").extract(
+  files: ["level1.zip/level2.zip/file.txt"]
+)
+# => ["/path/to/file.txt"]
+
 # Filter-based extraction
 Excavate::Archive.new("fonts.zip").extract(filter: "**/*.ttf")
 # => ["/path/to/Arial.ttf", "/path/to/Verdana.ttf"]
@@ -101,7 +108,8 @@ files(recursive_packages: false, files: [], filter: nil, &block)
 ----
 
 Parameters::
-Same as `extract`.
+Same as `extract`. Note that `recursive_packages` is automatically enabled
+when `files:` option is provided.
 
 Block::
 Yields each extracted file path to the block.

@@ -19,6 +19,9 @@ module Excavate
     end
 
     def files(recursive_packages: false, files: [], filter: nil, &block)
+      # Auto-enable recursive_packages when extracting specific files
+      recursive_packages = true if files.any?
+
       target = Dir.mktmpdir
       extract(target, recursive_packages: recursive_packages,
                       files: files, filter: filter)
@@ -32,6 +35,9 @@ module Excavate
                 recursive_packages: false,
                 files: [],
                 filter: nil)
+      # Auto-enable recursive_packages when extracting specific files
+      recursive_packages = true if files.any?
+
       if files.size.positive?
         extract_particular_files(target, files,
                                  recursive_packages: recursive_packages)

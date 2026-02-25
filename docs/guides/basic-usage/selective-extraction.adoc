@@ -52,19 +52,41 @@ files = Excavate::Archive.new('archive.zip').extract(files: ['readme.txt'])
 
 === Nested Archive Paths
 
-When extracting from nested archives (with `recursive_packages: true`), use
-paths that include the nested archive name:
+When extracting from nested archives, you can specify paths that include the
+nested archive name. The `recursive_packages` option is automatically enabled
+when using the `files:` option:
 
 [source,ruby]
 ----
-# Extract file from CAB inside MSI
-Excavate::Archive.new('setup.msi').extract(
-  files: ['data1.cab/config.ini'],
-  recursive_packages: true
+# Extract file from nested archive
+Excavate::Archive.new('nested_archives.zip').extract(
+  files: ['inner.zip/file.txt']
 )
 ----
 
+==== Multi-Level Nesting
+
+Excavate supports arbitrary levels of nesting. For deeply nested archives:
+
+[source,ruby]
+----
+# Extract from three levels deep
+Excavate::Archive.new('bundle.zip').extract(
+  files: ['level1.zip/level2.zip/level3.zip/file.txt']
+)
+----
+
+==== How It Works
+
 The path format is: `nested_archive_name/path/to/file`
+
+Excavate will:
+
+. Extract the outer archive
+. Look for the specified nested archive by name
+. Extract files from that nested archive matching the path
+
+For multi-level nesting, the process repeats recursively.
 
 === Multiple Files
 
@@ -92,10 +114,12 @@ Excavate::Archive.new('installer.msi').extract(
   files: [
     'fonts.zip/Arial.ttf',
     'fonts.zip/Verdana.ttf'
-  ],
-  recursive_packages: true
+  ]
 )
 ----
+
+NOTE: The `recursive_packages` option is automatically enabled when using the
+`files:` option. You can still specify it explicitly if needed.
 
 === Error Handling
 
@@ -191,10 +215,9 @@ Excavate::Archive.new('fonts.msi').files(recursive_packages: true) do |path|
   fonts << path if path.end_with?('.ttf')
 end
 
-# Then extract them
+# Then extract them (recursive_packages auto-enabled with files:)
 Excavate::Archive.new('fonts.msi').extract(
-  files: fonts,
-  recursive_packages: true
+  files: fonts
 )
 ----
 

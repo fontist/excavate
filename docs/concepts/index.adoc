@@ -27,6 +27,9 @@ Core concepts and architectural patterns behind Excavate.
 
 | <<extractor-architecture,Extractor Architecture>>
 | The extractor pattern
+
+| <<excavate-path,Excavate Path>>
+| Virtual paths through nested archives
 |===
 
 === Key Concepts
@@ -35,6 +38,7 @@ Core concepts and architectural patterns behind Excavate.
 .Extractor:: A class that handles extraction for a specific format
 .Recursive Extraction:: Automatically extracting archives within archives
 .Format Detection:: Identifying archive type by extension or content
+.Excavate Path:: A virtual path that traverses through nested archives
 
 === Next Steps
 
