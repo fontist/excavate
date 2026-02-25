@@ -1,0 +1,129 @@
+---
+title: Format Reference
+parent: Reference
+has_children: true
+---
+
+== Format Reference
+
+=== Purpose
+
+Technical reference for supported archive formats.
+
+=== Supported Formats
+
+[cols="1,1,1,2,2"]
+|===
+| Format | Extension(s) | Extractor | Library | Notes
+
+| 7-Zip
+| `.7z`, `.exe`
+| SevenZipExtractor
+| Omnizip
+| BCJ2 filter support
+
+| CAB
+| `.cab`, `.exe`
+| CabExtractor
+| Cabriolet
+| Salvage mode
+
+| CPIO
+| `.cpio`
+| CpioExtractor
+| Omnizip
+| Old and new formats
+
+| GZIP
+| `.gz`, `.tar.gz`
+| GzipExtractor
+| Ruby stdlib
+| Magic byte verification
+
+| MSI
+| `.msi`
+| OleExtractor
+| Omnizip
+| OLE compound document
+
+| RPM
+| `.rpm`
+| RpmExtractor
+| Omnizip
+| Compressed payload
+
+| TAR
+| `.tar`
+| TarExtractor
+| Omnizip
+| POSIX, GNU, PAX
+
+| XAR
+| `.pkg`, `.xar`
+| XarExtractor
+| Omnizip
+| macOS packages
+
+| XZ
+| `.xz`, `.tar.xz`
+| XzExtractor
+| Omnizip
+| LZMA compression
+
+| ZIP
+| `.zip`
+| ZipExtractor
+| Omnizip
+| Standard format
+|===
+
+=== Extension Mapping
+
+[cols="1,2"]
+|===
+| Extension | Extractor
+
+| `.cab`
+| CabExtractor
+
+| `.cpio`
+| CpioExtractor
+
+| `.exe`
+| SevenZipExtractor (falls back to CabExtractor)
+
+| `.gz`, `.tgz`
+| GzipExtractor
+
+| `.msi`
+| OleExtractor
+
+| `.pkg`, `.xar`
+| XarExtractor
+
+| `.rpm`
+| RpmExtractor
+
+| `.tar`
+| TarExtractor
+
+| `.tar.gz`
+| GzipExtractor → TarExtractor
+
+| `.tar.xz`, `.txz`
+| XzExtractor → TarExtractor
+
+| `.xz`
+| XzExtractor
+
+| `.zip`
+| ZipExtractor
+
+| `.7z`
+| SevenZipExtractor
+|===
+
+=== Topics
+
+* <<supported-formats,Supported Formats>> - Complete format table
+* <<extension-mapping,Extension Mapping>> - Extension to extractor mapping

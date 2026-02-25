@@ -11,14 +11,15 @@ Gem::Specification.new do |spec|
   spec.email         = ["open.source@ribose.com"]
 
   spec.summary       = "Extract nested archives with a single command."
-  spec.description   = "Extract nested archives with a single command."
-  spec.homepage      = "https://github.com/fontist/excavate"
+  spec.description   = "Extract nested archives with a single command. Part of the Omnizip suite."
+  spec.homepage      = "https://github.com/omnizip/excavate"
   spec.license       = "BSD-3-Clause"
   spec.required_ruby_version = Gem::Requirement.new(">= 2.7.0")
 
   spec.metadata["homepage_uri"] = spec.homepage
-  spec.metadata["source_code_uri"] = "https://github.com/fontist/excavate"
-  spec.metadata["changelog_uri"] = "https://github.com/fontist/excavate"
+  spec.metadata["source_code_uri"] = "https://github.com/omnizip/excavate"
+  spec.metadata["changelog_uri"] = "https://github.com/omnizip/excavite/releases"
+  spec.metadata["documentation_uri"] = "https://omnizip.github.io/excavate"
 
   # Specify which files should be added to the gem when it is released.
   # The `git ls-files -z` loads the files in the RubyGem that have been added into git.

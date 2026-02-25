@@ -1,0 +1,148 @@
+---
+title: Supported Formats
+parent: Format Reference
+grand_parent: Reference
+nav_order: 1
+---
+
+== Supported Formats
+
+=== Purpose
+
+Complete reference of all supported archive formats.
+
+=== Format Table
+
+[cols="1,1,1,2,3"]
+|===
+| Format | Extension | Extractor | Library | Features
+
+| 7-Zip
+| `.7z`
+| SevenZipExtractor
+| Omnizip
+| LZMA, LZMA2, BCJ2
+
+| Self-extracting 7-Zip
+| `.exe`
+| SevenZipExtractor
+| Omnizip
+| Auto-detection
+
+| Microsoft CAB
+| `.cab`
+| CabExtractor
+| Cabriolet
+| LZSS, MSZIP, LZX, Quantum
+
+| Self-extracting CAB
+| `.exe`
+| CabExtractor
+| Cabriolet
+| Fallback from 7-Zip
+
+| CPIO
+| `.cpio`
+| CpioExtractor
+| Omnizip
+| Old and new formats
+
+| GZIP
+| `.gz`
+| GzipExtractor
+| Ruby stdlib
+| Magic byte check
+
+| TAR + GZIP
+| `.tar.gz`, `.tgz`
+| GzipExtractor → TarExtractor
+| Omnizip
+| Automatic chain
+
+| Windows Installer
+| `.msi`
+| OleExtractor
+| Omnizip
+| OLE compound document
+
+| Red Hat Package
+| `.rpm`
+| RpmExtractor
+| Omnizip
+| GZIP/XZ payload
+
+| TAR
+| `.tar`
+| TarExtractor
+| Omnizip
+| POSIX, GNU, PAX
+
+| XAR
+| `.xar`
+| XarExtractor
+| Omnizip
+| XML-based index
+
+| macOS Package
+| `.pkg`
+| XarExtractor
+| Omnizip
+| CPIO payload
+
+| XZ
+| `.xz`
+| XzExtractor
+| Omnizip
+| LZMA, LZMA2
+
+| TAR + XZ
+| `.tar.xz`, `.txz`
+| XzExtractor → TarExtractor
+| Omnizip
+| Automatic chain
+
+| ZIP
+| `.zip`
+| ZipExtractor
+| Omnizip
+| Deflate, Store
+|===
+
+=== Compression Support
+
+==== CAB Compression
+
+* None (uncompressed)
+* LZSS (simple dictionary)
+* MSZIP (deflate-compatible)
+* LZX (high ratio)
+* Quantum (memory-efficient)
+
+==== 7-Zip Compression
+
+* LZMA
+* LZMA2
+* PPMD
+* BCJ (x86 filter)
+* BCJ2 (enhanced x86)
+
+==== ZIP Compression
+
+* Store (none)
+* Deflate
+
+=== Platform Support
+
+.All Platforms:: ZIP, TAR, TAR.GZ, TAR.XZ, 7-Zip
+.Windows:: CAB, MSI
+.Linux:: RPM, TAR, TAR.GZ, TAR.XZ
+.macOS:: PKG, XAR
+
+=== Dependencies
+
+All formats are supported through pure Ruby libraries:
+
+* Omnizip (~> 0.3.8)
+* Cabriolet (~> 0.2.2)
+
+No native dependencies required.

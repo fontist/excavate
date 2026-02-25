@@ -1,0 +1,43 @@
+---
+title: Examples
+nav_order: 3
+has_children: true
+---
+
+== Examples
+
+=== Purpose
+
+Complete, runnable examples demonstrating Excavate usage patterns.
+
+=== Topics
+
+[cols="1,4"]
+|===
+| Example | Description
+
+| <<extract-msi-installer,Extract MSI Installer>>
+| Complete MSI extraction workflow
+
+| <<batch-font-extraction,Batch Font Extraction>>
+| Process multiple font archives
+
+| <<filter-by-pattern,Filter by Pattern>>
+| Pattern-based extraction examples
+
+| <<rails-upload-handler,Rails Upload Handler>>
+| Web application integration
+|===
+
+=== Quick Start
+
+All examples assume Excavate is installed and required:
+
+[source,ruby]
+----
+require 'excavate'
+----
+
+=== Next Steps
+
+Browse the examples for ready-to-use code snippets.

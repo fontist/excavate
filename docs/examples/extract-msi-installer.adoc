@@ -1,0 +1,139 @@
+---
+title: Extract MSI Installer
+parent: Examples
+nav_order: 1
+---
+
+== Extract MSI Installer
+
+=== Purpose
+
+Complete example of extracting files from a Windows Installer (MSI) package.
+
+=== Problem
+
+You need to extract files from an MSI installer to analyze its contents or
+access specific files without running the installer.
+
+=== Solution
+
+Use Excavate with recursive extraction to handle the nested CAB archives:
+
+[source,ruby]
+----
+require 'excavate'
+
+# Create archive instance
+archive = Excavate::Archive.new('installer.msi')
+
+# Extract with recursive option to get all files
+archive.extract(recursive_packages: true)
+----
+
+=== Complete Example
+
+[source,ruby]
+----
+require 'excavate'
+require 'fileutils'
+
+class MsiExtractor
+  def initialize(msi_path)
+    @msi_path = msi_path
+    @archive = Excavate::Archive.new(msi_path)
+  end
+
+  def extract_all(target = nil)
+    target ||= default_target
+
+    # Remove existing target if any
+    FileUtils.rm_rf(target) if File.exist?(target)
+
+    # Extract with recursive option
+    @archive.extract(target, recursive_packages: true)
+
+    puts "Extracted to: #{target}"
+    target
+  end
+
+  def extract_files(file_patterns, target = nil)
+    target ||= default_target
+
+    # Extract specific files
+    extracted = @archive.extract(
+      target,
+      recursive_packages: true,
+      files: file_patterns
+    )
+
+    puts "Extracted #{extracted.size} files"
+    extracted
+  end
+
+  def extract_by_filter(pattern, target = nil)
+    target ||= default_target
+
+    # Extract matching files
+    extracted = @archive.extract(
+      target,
+      recursive_packages: true,
+      filter: pattern
+    )
+
+    puts "Extracted #{extracted.size} files matching #{pattern}"
+    extracted
+  end
+
+  def list_contents
+    files = []
+
+    @archive.files(recursive_packages: true) do |path|
+      files << path
+    end
+
+    files.sort
+  end
+
+  private
+
+  def default_target
+    File.basename(@msi_path, '.msi')
+  end
+end
+
+# Usage
+extractor = MsiExtractor.new('installer.msi')
+
+# List contents
+puts "Contents:"
+extractor.list_contents.each { |f| puts "  #{f}" }
+
+# Extract everything
+extractor.extract_all
+
+# Extract only DLLs
+extractor.extract_by_filter('**/*.dll')
+
+# Extract specific files
+extractor.extract_files(['data1.cab/config.ini', 'data1.cab/README.txt'])
+----
+
+=== CLI Alternative
+
+[source,bash]
+----
+# Extract everything
+excavate -r installer.msi
+
+# Extract only DLLs
+excavate -r --filter "**/*.dll" installer.msi
+
+# Extract specific files
+excavate -r installer.msi data1.cab/config.ini
+----
+
+=== Notes
+
+* MSI files contain CAB archives that are automatically extracted
+* Use `recursive_packages: true` to get actual file contents
+* Without recursive option, you get the CAB files but not their contents

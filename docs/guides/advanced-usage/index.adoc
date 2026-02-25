@@ -1,0 +1,57 @@
+---
+title: Advanced Usage
+parent: Guides
+has_children: true
+---
+
+== Advanced Usage
+
+=== Purpose
+
+Advanced guides for complex extraction scenarios, error handling, and
+performance optimization.
+
+=== Topics
+
+[cols="1,4"]
+|===
+| Guide | Description
+
+| <<recursive-extraction,Recursive Extraction>>
+| Extract nested archives automatically
+
+| <<error-handling,Error Handling>>
+| Robust error recovery patterns
+
+| <<performance-tuning,Performance Tuning>>
+| Optimization tips and techniques
+|===
+
+=== When to Use Advanced Features
+
+.Recursive Extraction:: When working with MSI, PKG, RPM, or other formats containing nested archives
+.Error Handling:: For production applications requiring robust error recovery
+.Performance Tuning:: For large archives or batch processing scenarios
+
+=== Quick Reference
+
+.Recursive extraction
+[source,ruby]
+----
+Excavate::Archive.new('installer.msi').extract(recursive_packages: true)
+----
+
+.Error handling
+[source,ruby]
+----
+begin
+  archive.extract(target)
+rescue Excavate::Error => e
+  handle_error(e)
+end
+----
+
+=== Next Steps
+
+Start with <<recursive-extraction,Recursive Extraction>> for handling nested
+archives, then explore error handling and performance optimization.

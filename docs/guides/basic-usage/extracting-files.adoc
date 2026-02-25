@@ -1,0 +1,244 @@
+---
+title: Extracting Files
+parent: Basic Usage
+grand_parent: Guides
+nav_order: 1
+---
+
+== Extracting Files
+
+=== Purpose
+
+This guide covers the fundamental extraction operations for extracting archive
+contents to disk.
+
+=== References
+
+* xref:../../reference/api.adoc[API Reference]
+
+=== Concepts
+
+Extraction is the process of decompressing and writing archive contents to a
+target directory. Excavate handles format detection, directory creation, and
+file writing automatically.
+
+=== Basic Extraction
+
+==== Extract to Auto-Created Directory
+
+The simplest extraction creates a directory based on the archive name:
+
+[source,ruby]
+----
+require 'excavate'
+
+archive = Excavate::Archive.new('package.zip')
+archive.extract
+# Creates ./package/ directory with contents
+# Returns: "/path/to/package"
+----
+
+The directory name is derived from the archive filename without extension.
+
+==== Extract to Specific Directory
+
+Specify a target directory:
+
+[source,ruby]
+----
+archive = Excavate::Archive.new('package.zip')
+archive.extract('/path/to/output')
+# Extracts to /path/to/output/
+----
+
+==== Using Pathname Objects
+
+Pathname objects are supported:
+
+[source,ruby]
+----
+require 'pathname'
+
+archive = Excavate::Archive.new(Pathname.new('package.zip'))
+archive.extract(Pathname.new('/tmp/output'))
+----
+
+=== Target Directory Rules
+
+Excavate enforces safety rules for target directories:
+
+==== Directory Must Not Exist
+
+If the target file or directory exists, an error is raised:
+
+[source,ruby]
+----
+begin
+  Excavate::Archive.new('package.zip').extract
+rescue Excavate::TargetExistsError => e
+  puts "Target exists: #{e.message}"
+end
+----
+
+==== Directory Must Be Empty
+
+If the target exists but is a non-empty directory:
+
+[source,ruby]
+----
+begin
+  Excavate::Archive.new('package.zip').extract('/non/empty/dir')
+rescue Excavate::TargetNotEmptyError => e
+  puts "Directory not empty: #{e.message}"
+end
+----
+
+==== Safe Overwrite Pattern
+
+To overwrite an existing directory:
+
+[source,ruby]
+----
+target = 'output'
+
+# Remove existing if needed
+FileUtils.rm_rf(target) if File.exist?(target)
+
+# Extract fresh
+Excavate::Archive.new('package.zip').extract(target)
+----
+
+=== Supported Archive Types
+
+Excavate automatically detects the archive format by extension:
+
+[cols="1,2,2"]
+|===
+| Extension | Format | Notes
+
+| `.zip`
+| ZIP
+| Standard ZIP format
+
+| `.tar`
+| TAR
+| Unix tape archive
+
+| `.tar.gz`, `.tgz`
+| TAR + GZIP
+| Compressed tarball
+
+| `.tar.xz`, `.txz`
+| TAR + XZ
+| XZ-compressed tarball
+
+| `.7z`
+| 7-Zip
+| High compression format
+
+| `.cab`
+| Microsoft CAB
+| Cabinet archive
+
+| `.msi`
+| Windows Installer
+| OLE compound document
+
+| `.rpm`
+| RPM Package
+| Red Hat package
+
+| `.pkg`, `.xar`
+| XAR/PKG
+| macOS installer
+
+| `.exe`
+| Self-extracting
+| 7-Zip or CAB SFX
+|===
+
+=== Working with Different Formats
+
+==== ZIP Files
+
+[source,ruby]
+----
+Excavate::Archive.new('archive.zip').extract
+----
+
+==== TAR Files
+
+[source,ruby]
+----
+# Plain TAR
+Excavate::Archive.new('archive.tar').extract
+
+# Compressed TAR
+Excavate::Archive.new('archive.tar.gz').extract
+Excavate::Archive.new('archive.tar.xz').extract
+----
+
+==== MSI Files
+
+MSI files contain embedded CAB archives:
+
+[source,ruby]
+----
+# Basic extraction (CAB files remain as .cab)
+Excavate::Archive.new('installer.msi').extract
+
+# Recursive extraction (CAB files are extracted)
+Excavate::Archive.new('installer.msi').extract(recursive_packages: true)
+----
+
+==== RPM Packages
+
+[source,ruby]
+----
+Excavate::Archive.new('package.rpm').extract(recursive_packages: true)
+----
+
+==== macOS Packages
+
+[source,ruby]
+----
+Excavate::Archive.new('Installer.pkg').extract(recursive_packages: true)
+----
+
+=== CLI Usage
+
+Extract from the command line:
+
+[source,bash]
+----
+# Basic extraction
+excavate package.zip
+
+# Extract specific files
+excavate archive.tar.gz file1.txt file2.txt
+----
+
+=== Error Handling
+
+Handle extraction errors gracefully:
+
+[source,ruby]
+----
+begin
+  Excavate::Archive.new('archive.zip').extract('/target')
+rescue Excavate::TargetExistsError
+  puts "Target already exists"
+rescue Excavate::TargetNotEmptyError
+  puts "Target directory is not empty"
+rescue Excavate::UnknownArchiveError
+  puts "Unknown or unsupported archive format"
+rescue Excavate::Error => e
+  puts "Extraction failed: #{e.message}"
+end
+----
+
+=== Next Steps
+
+* Learn <<selective-extraction,Selective Extraction>> for extracting specific files
+* Explore <<filter-patterns,Filter Patterns>> for pattern-based extraction
+* See <<file-iteration,File Iteration>> for processing files during extraction

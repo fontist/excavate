@@ -1,0 +1,247 @@
+---
+title: Performance Issues
+parent: Troubleshooting
+nav_order: 4
+---
+
+== Performance Issues
+
+=== Purpose
+
+Diagnosing and solving performance problems.
+
+=== Diagnosis
+
+==== Measure Performance
+
+[source,ruby]
+----
+require 'benchmark'
+
+time = Benchmark.measure do
+  Excavate::Archive.new('large.zip').extract
+end
+
+puts "Extraction took: #{time.real} seconds"
+----
+
+==== Identify Bottlenecks
+
+[source,ruby]
+----
+# Check disk I/O
+puts "Disk speed test:"
+system('dd if=/dev/zero of=/tmp/test bs=1M count=100')
+
+# Check available memory
+puts "Memory info:"
+system('free -h')  # Linux
+system('vm_stat')  # macOS
+----
+
+=== Slow Extraction
+
+==== Large Archives
+
+===== Problem
+
+Extraction takes a long time for large archives.
+
+===== Solutions
+
+.Use filters
+[source,ruby]
+----
+# Extract only what you need
+Excavate::Archive.new('large.zip').extract(
+  filter: '**/*.txt'
+)
+----
+
+.Use faster storage
+[source,ruby]
+----
+# Extract to local SSD instead of network mount
+Excavate::Archive.new('large.zip').extract('/tmp/output')
+----
+
+==== Recursive Extraction
+
+===== Problem
+
+Recursive extraction is slow due to multiple passes.
+
+===== Solutions
+
+.Limit recursion depth
+[source,ruby]
+----
+# Extract only what you need with filter
+Excavate::Archive.new('installer.msi').extract(
+  recursive_packages: true,
+  filter: '**/*.dll'  # Reduces work
+)
+----
+
+.Skip nested if not needed
+[source,ruby]
+----
+# Only use recursive when needed
+Excavate::Archive.new('archive.zip').extract  # No recursive
+----
+
+=== Memory Issues
+
+==== High Memory Usage
+
+===== Problem
+
+Extraction uses too much memory.
+
+===== Solutions
+
+.Process files one at a time
+[source,ruby]
+----
+# Good: Process and release
+archive.files do |path|
+  process_file(path)
+  # Memory released after each file
+end
+
+# Bad: Load all into memory
+all_content = archive.files do |path|
+  File.read(path)  # Accumulates
+end
+----
+
+.Use streaming
+[source,ruby]
+----
+# Read files in chunks
+archive.files do |path|
+  File.open(path, 'rb') do |f|
+    while chunk = f.read(8192)
+      process_chunk(chunk)
+    end
+  end
+end
+----
+
+==== Memory Leaks
+
+===== Problem
+
+Memory not released after extraction.
+
+===== Solution
+
+Ensure cleanup:
+
+[source,ruby]
+----
+target = nil
+begin
+  target = Dir.mktmpdir
+  Excavate::Archive.new(archive).extract(target)
+  # Process files
+ensure
+  FileUtils.rm_rf(target) if target
+  GC.start  # Force garbage collection
+end
+----
+
+=== Disk Space Issues
+
+==== Insufficient Space
+
+===== Problem
+
+Extraction fails due to disk space.
+
+===== Solution
+
+Check space before extraction:
+
+[source,ruby]
+----
+def sufficient_space?(path, required_mb)
+  stat = if File.directory?(path)
+    `df -m #{path}`.split("\n").last.split[3].to_i
+  else
+    `df -m #{File.dirname(path)}`.split("\n").last.split[3].to_i
+  end
+  stat >= required_mb
+end
+
+unless sufficient_space?(target, 1000)
+  raise "Insufficient disk space"
+end
+----
+
+==== Disk I/O Bottleneck
+
+===== Problem
+
+Slow disk I/O limits extraction speed.
+
+===== Solution
+
+.Use faster storage
+[source,ruby]
+----
+# SSD instead of HDD
+# Local disk instead of network mount
+----
+
+.Reduce I/O
+[source,ruby]
+----
+# Use filters to extract fewer files
+Excavate::Archive.new('archive.zip').extract(
+  filter: '**/important/**/*'
+)
+----
+
+=== Batch Processing Issues
+
+==== Slow Batch Processing
+
+===== Problem
+
+Processing many archives is slow.
+
+===== Solutions
+
+.Parallel processing
+[source,ruby]
+----
+require 'parallel'
+
+Parallel.each(archives, in_threads: 4) do |archive|
+  Excavate::Archive.new(archive).extract
+end
+----
+
+.Sequential with progress
+[source,ruby]
+----
+archives.each_with_index do |archive, i|
+  puts "[#{i + 1}/#{archives.size}] Processing..."
+  Excavate::Archive.new(archive).extract
+end
+----
+
+=== Performance Checklist
+
+. Use filters to extract only needed files
+. Extract to fast local storage
+. Process files one at a time with `files` method
+. Avoid loading entire files into memory
+. Use parallel processing for independent archives
+. Check disk space before extraction
+
+=== See Also
+
+* xref:../guides/advanced-usage/performance-tuning.adoc[Performance Tuning]
+* xref:../resources/performance.adoc[Performance Reference]

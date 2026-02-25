@@ -1,0 +1,239 @@
+---
+title: Compatibility
+parent: Resources
+nav_order: 4
+---
+
+== Compatibility
+
+=== Purpose
+
+Platform and Ruby compatibility information for Excavate.
+
+=== Ruby Compatibility
+
+==== Supported Ruby Versions
+
+[cols="1,1,1"]
+|===
+| Ruby | Version | Status
+
+| MRI
+| 2.7
+| Supported
+
+| MRI
+| 3.0
+| Supported
+
+| MRI
+| 3.1
+| Supported
+
+| MRI
+| 3.2
+| Supported
+
+| MRI
+| 3.3
+| Supported
+
+| JRuby
+| 9.4+
+| Supported
+
+| TruffleRuby
+| 22+
+| Supported
+|===
+
+==== Ruby Implementation Notes
+
+.All implementations::
+* 100% pure Ruby code
+* No native extensions required
+* No C compilation needed
+
+.MRI::
+* Best performance
+* Recommended for production
+
+.JRuby::
+* Full compatibility
+* Good for Java environments
+
+.TruffleRuby::
+* Full compatibility
+* Excellent performance
+
+=== Platform Compatibility
+
+==== Operating Systems
+
+[cols="1,1,1"]
+|===
+| Platform | Status | Notes
+
+| Linux
+| ✓ Full
+| All distributions
+
+| macOS
+| ✓ Full
+| 10.14+
+
+| Windows
+| ✓ Full
+| 10+
+
+| FreeBSD
+| ✓ Full
+| All versions
+
+| OpenBSD
+| ✓ Full
+| All versions
+
+| NetBSD
+| ✓ Full
+| All versions
+|===
+
+==== Platform-Specific Notes
+
+.Linux::
+* No special requirements
+* Works in containers (Docker, etc.)
+
+.macOS::
+* PKG/XAR fully supported
+* Universal binaries handled
+
+.Windows::
+* File locking handled automatically
+* Path separators handled correctly
+* Long paths supported
+
+=== Format Compatibility
+
+==== Supported Formats by Platform
+
+[cols="1,1,1,1,1"]
+|===
+| Format | Linux | macOS | Windows | Notes
+
+| ZIP
+| ✓
+| ✓
+| ✓
+| Universal
+
+| TAR
+| ✓
+| ✓
+| ✓
+| Unix native
+
+| TAR.GZ
+| ✓
+| ✓
+| ✓
+| Universal
+
+| TAR.XZ
+| ✓
+| ✓
+| ✓
+| Universal
+
+| 7-Zip
+| ✓
+| ✓
+| ✓
+| Universal
+
+| CAB
+| ✓
+| ✓
+| ✓
+| Windows native
+
+| MSI
+| ✓
+| ✓
+| ✓
+| Windows native
+
+| RPM
+| ✓
+| ✓
+| ✓
+| Linux native
+
+| PKG
+| ✓
+| ✓
+| ✓
+| macOS native
+|===
+
+=== Dependency Compatibility
+
+==== Required Gems
+
+[cols="1,1,1"]
+|===
+| Gem | Version | Notes
+
+| omnizip
+| ~> 0.3.8
+| Pure Ruby
+
+| cabriolet
+| ~> 0.2.2
+| Pure Ruby
+
+| thor
+| ~> 1.0
+| Pure Ruby
+|===
+
+All dependencies are pure Ruby with no platform-specific requirements.
+
+=== Known Limitations
+
+==== Windows
+
+* Very long paths (>260 chars) may require special handling
+* Some anti-virus software may slow extraction
+
+==== macOS
+
+* PKG files with custom install scripts cannot execute scripts
+
+==== Linux
+
+* No limitations known
+
+=== Testing Coverage
+
+Excavate is tested on:
+
+* Ruby 2.7, 3.0, 3.1, 3.2, 3.3 (MRI)
+* JRuby 9.4
+* TruffleRuby 22+
+* Ubuntu, macOS, Windows
+
+=== Reporting Issues
+
+If you encounter compatibility issues:
+
+. Report Ruby version: `ruby -v`
+. Report OS version
+. Provide sample archive
+. Include error message and backtrace
+
+=== See Also
+
+* xref:../getting-started/installation.adoc[Installation Guide]
+* xref:../troubleshooting/index.adoc[Troubleshooting]

@@ -1,0 +1,157 @@
+---
+title: Extractor Architecture
+parent: Concepts
+nav_order: 4
+---
+
+== Extractor Architecture
+
+=== Purpose
+
+Understanding the extractor pattern used by Excavate.
+
+=== Concepts
+
+Excavate uses an object-oriented architecture with a base Extractor class and
+specialized subclasses for each format.
+
+=== Architecture Overview
+
+[source]
+----
+┌─────────────────────────────────────────────────────────────┐
+│                     Excavate::Archive                       │
+│           (Facade providing unified interface)              │
+└───────────────────────────┬─────────────────────────────────┘
+                            │
+                            │ delegates to
+                            │
+    ┌───────────────────────┴───────────────────────┐
+    │           Format Type Registry                │
+    │           (TYPES hash mapping)                │
+    └───────────────────────┬───────────────────────┘
+                            │
+                            │ instantiates
+                            │
+    ┌───────────────────────┴───────────────────────┐
+    │           Extractors::Extractor               │
+    │           (Abstract base class)               │
+    └───────────────────────┬───────────────────────┘
+                            │
+                            │ specialized by
+                            │
+    ┌───────┬───────┬───────┼───────┬───────┬───────┐
+    │       │       │       │       │       │       │
+   Cab    Cpio    Gzip    Xar     Zip    SevenZip  ...
+    │       │       │       │       │       │
+    └───────┴───────┴───────┴───────┴───────┴───────┘
+              Powered by Omnizip & Cabriolet
+----
+
+=== Archive Class
+
+The `Excavate::Archive` class is the main entry point:
+
+[source,ruby]
+----
+class Excavate::Archive
+  def initialize(archive_path)
+    @archive_path = archive_path
+  end
+
+  def extract(target = nil, **options)
+    # Detects format and delegates to extractor
+  end
+
+  def files(**options, &block)
+    # Creates temp dir, extracts, yields files
+  end
+end
+----
+
+=== Base Extractor
+
+All extractors inherit from a base class:
+
+[source,ruby]
+----
+class Extractors::Extractor
+  def initialize(archive)
+    @archive = archive
+  end
+
+  def extract(target)
+    raise NotImplementedError
+  end
+end
+----
+
+=== Format-Specific Extractors
+
+Each format has a dedicated extractor:
+
+[source,ruby]
+----
+# CAB extraction using Cabriolet
+class Extractors::CabExtractor < Extractor
+  def extract(target)
+    # Uses Cabriolet gem
+  end
+end
+
+# ZIP extraction using Omnizip
+class Extractors::ZipExtractor < Extractor
+  def extract(target)
+    # Uses Omnizip gem
+  end
+end
+----
+
+=== Design Principles
+
+==== Single Responsibility
+
+Each extractor handles one format:
+
+* `CabExtractor` - Only CAB files
+* `ZipExtractor` - Only ZIP files
+* `MsiExtractor` - Only MSI files
+
+==== Open/Closed Principle
+
+New formats can be added without modifying existing code:
+
+[source,ruby]
+----
+# Add new format by creating extractor and registering
+TYPES["newfmt"] = NewFormatExtractor
+----
+
+==== Dependency Inversion
+
+Archive depends on the Extractor abstraction, not concrete implementations:
+
+[source,ruby]
+----
+# Archive doesn't know about specific extractors
+def extract(target)
+  extractor_class = TYPES[extension]
+  extractor = extractor_class.new(@archive)
+  extractor.extract(target)
+end
+----
+
+=== Dependencies
+
+Excavate relies on:
+
+* **Omnizip** (~> 0.3.8) - ZIP, 7-Zip, TAR, GZIP, XZ, CPIO, RPM, OLE
+* **Cabriolet** (~> 0.2.2) - CAB format
+* **Thor** (~> 1.0) - CLI framework
+
+All are pure Ruby with no compiled dependencies.
+
+=== See Also
+
+* xref:../reference/api.adoc[API Reference]
+* xref:../developer/architecture/index.adoc[Developer Architecture]

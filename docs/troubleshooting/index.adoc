@@ -1,0 +1,74 @@
+---
+title: Troubleshooting
+nav_order: 8
+has_children: true
+---
+
+== Troubleshooting
+
+=== Purpose
+
+Solutions to common problems when using Excavate.
+
+=== Topics
+
+[cols="1,4"]
+|===
+| Topic | Description
+
+| <<common-errors,Common Errors>>
+| Frequently encountered errors
+
+| <<corrupted-files,Corrupted Files>>
+| Handling damaged archives
+
+| <<platform-specific,Platform-Specific>>
+| OS-specific issues
+
+| <<performance-issues,Performance Issues>>
+| Solving performance problems
+|===
+
+=== Quick Diagnosis
+
+==== Error: "Target already exists"
+
+Remove the existing target or use a different path:
+
+[source,ruby]
+----
+FileUtils.rm_rf(target)
+Excavate::Archive.new(archive).extract(target)
+----
+
+==== Error: "Unknown archive format"
+
+Check the file extension:
+
+[source,ruby]
+----
+puts File.extname(archive_path)
+# Should be .zip, .tar, .msi, etc.
+----
+
+==== Error: "File not found"
+
+Verify the file exists:
+
+[source,ruby]
+----
+puts File.exist?(archive_path)
+puts File.size(archive_path)
+----
+
+=== Getting Help
+
+If you can't find a solution:
+
+. Check the xref:../resources/faq.adoc[FAQ]
+. Search https://github.com/omnizip/excavate/issues[GitHub Issues]
+. https://github.com/omnizip/excavate/issues/new[Open a new issue]
+
+=== Next Steps
+
+Browse specific troubleshooting topics for detailed solutions.

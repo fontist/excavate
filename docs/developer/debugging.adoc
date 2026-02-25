@@ -1,0 +1,235 @@
+---
+title: Debugging
+parent: Developer Documentation
+nav_order: 5
+---
+
+== Debugging
+
+=== Purpose
+
+Techniques for debugging Excavate issues.
+
+=== Basic Debugging
+
+==== Verbose Output
+
+Add debug output to track execution:
+
+[source,ruby]
+----
+def extract(target)
+  puts "DEBUG: Extracting #{@archive} to #{target}"
+
+  # ... extraction logic
+
+  puts "DEBUG: Extraction complete"
+  target
+end
+----
+
+==== Exception Details
+
+Capture and inspect exceptions:
+
+[source,ruby]
+----
+begin
+  archive.extract(target)
+rescue Excavate::Error => e
+  puts "Error: #{e.class}"
+  puts "Message: #{e.message}"
+  puts "Backtrace:"
+  puts e.backtrace.first(10)
+end
+----
+
+=== Common Issues
+
+==== Unknown Archive Format
+
+Symptoms: `UnknownArchiveError` raised
+
+Debug steps:
+
+[source,ruby]
+----
+# Check extension
+puts File.extname(archive_path)
+
+# Check if extension is registered
+puts Excavate::Archive::TYPES.keys
+
+# Check file exists
+puts File.exist?(archive_path)
+
+# Check file size
+puts File.size(archive_path)
+----
+
+==== Target Directory Issues
+
+Symptoms: `TargetExistsError` or `TargetNotEmptyError`
+
+Debug steps:
+
+[source,ruby]
+----
+# Check if target exists
+puts File.exist?(target)
+
+# Check if target is directory
+puts File.directory?(target)
+
+# List contents
+puts Dir.glob("#{target}/*")
+----
+
+==== Extraction Errors
+
+Symptoms: Incomplete extraction or errors
+
+Debug steps:
+
+[source,ruby]
+----
+# Check disk space
+puts `df -h`
+
+# Check permissions
+puts File.stat(target).mode.to_s(8)
+
+# Check extracted files
+Dir.glob("#{target}/**/*").each { |f| puts f }
+----
+
+=== Format-Specific Debugging
+
+==== CAB Issues
+
+[source,ruby]
+----
+# Check magic bytes
+File.open(cab_path, 'rb') { |f| puts f.read(4).inspect }
+
+# Expected: "MSCF"
+----
+
+==== GZIP Issues
+
+[source,ruby]
+----
+# Check magic bytes
+File.open(gz_path, 'rb') { |f| puts f.read(2).bytes.inspect }
+
+# Expected: [31, 139] (0x1F, 0x8B)
+----
+
+==== MSI Issues
+
+[source,ruby]
+----
+# Check if valid OLE
+require 'ole/storage'
+
+begin
+  Ole::Storage.open(msi_path) do |ole|
+    puts "Valid OLE: #{ole.file_entries.size} entries"
+  end
+rescue
+  puts "Invalid OLE file"
+end
+----
+
+=== Performance Debugging
+
+==== Slow Extraction
+
+[source,ruby]
+----
+require 'benchmark'
+
+time = Benchmark.measure do
+  archive.extract(target)
+end
+
+puts "Extraction took: #{time.real} seconds"
+----
+
+==== Memory Usage
+
+[source,ruby]
+----
+def memory_usage
+  `ps -o rss= -p #{Process.pid}`.to_i / 1024
+end
+
+before = memory_usage
+archive.extract(target)
+after = memory_usage
+
+puts "Memory delta: #{after - before} MB"
+----
+
+=== Debugging Tools
+
+==== Using logger
+
+[source,ruby]
+----
+require 'logger'
+
+logger = Logger.new($stdout)
+logger.level = Logger::DEBUG
+
+# In extraction code
+logger.debug("Extracting to #{target}")
+----
+
+==== Inspecting State
+
+[source,ruby]
+----
+# Use Object#inspect for debugging
+puts archive.inspect
+
+# Use PP for pretty printing
+require 'pp'
+pp archive.methods
+----
+
+=== CLI Debugging
+
+==== Verbose Mode
+
+[source,bash]
+----
+excavate --help
+----
+
+==== Exit Codes
+
+[source,bash]
+----
+excavate archive.zip
+echo "Exit code: $?"
+----
+
+==== Manual Extraction
+
+[source,bash]
+----
+# Check file type
+file archive.zip
+
+# Check contents
+unzip -l archive.zip
+
+# Try system tool
+unzip archive.zip -d output/
+----
+
+=== See Also
+
+* <<testing,Testing>>
+* xref:../troubleshooting/index.adoc[Troubleshooting]

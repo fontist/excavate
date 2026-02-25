@@ -1,0 +1,41 @@
+---
+title: Concepts
+nav_order: 4
+has_children: true
+---
+
+== Concepts
+
+=== Purpose
+
+Core concepts and architectural patterns behind Excavate.
+
+=== Topics
+
+[cols="1,4"]
+|===
+| Concept | Description
+
+| <<archive-formats,Archive Formats>>
+| Fundamentals of archive formats
+
+| <<recursive-extraction,Recursive Extraction>>
+| How nested extraction works
+
+| <<format-detection,Format Detection>>
+| Extension and magic byte detection
+
+| <<extractor-architecture,Extractor Architecture>>
+| The extractor pattern
+|===
+
+=== Key Concepts
+
+.Archive:: A single file containing one or more files with metadata
+.Extractor:: A class that handles extraction for a specific format
+.Recursive Extraction:: Automatically extracting archives within archives
+.Format Detection:: Identifying archive type by extension or content
+
+=== Next Steps
+
+Explore individual concepts for deeper understanding of how Excavate works.

@@ -1,0 +1,79 @@
+---
+title: Getting Started
+nav_order: 1
+has_children: true
+---
+
+== Getting Started
+
+=== Purpose
+
+This section covers everything you need to start using Excavate for archive
+extraction. Follow the guides in order for a complete introduction.
+
+=== Learning Path
+
+.New to Excavate?
+
+Follow these steps to get started:
+
+. <<installation,Install Excavate>> on your system
+. <<quick-start,Quick Start>> (5 minutes) - Extract your first archive
+. <<basic-usage,Basic Usage>> - Learn the core operations
+. <<common-workflows,Common Workflows>> - Practical patterns
+
+.Already familiar with Excavate?
+
+Jump to specific topics:
+
+* <<basic-usage#_recursive_extraction,Recursive Extraction>> - Nested archives
+* <<basic-usage#_selective_extraction,Selective Extraction>> - Extract specific files
+* <<basic-usage#_filter_extraction,Filter Extraction>> - Pattern-based extraction
+
+=== Topics in This Section
+
+[cols="1,4"]
+|===
+| Guide | Description
+
+| <<installation,Installation>>
+| Install Excavate on any platform
+
+| <<quick-start,Quick Start>>
+| Extract your first archive in 5 minutes
+
+| <<basic-usage,Basic Usage>>
+| Core extraction operations
+
+| <<common-workflows,Common Workflows>>
+| Practical extraction patterns
+|===
+
+=== Key Concepts
+
+Before diving in, understand these core concepts:
+
+.Archive
+A single file containing one or more files with metadata.
+
+.Recursive Extraction
+Automatically extracting archives within archives (e.g., MSI → CAB → files).
+
+.Selective Extraction
+Extracting only specific files from an archive.
+
+.Filter Pattern
+Glob pattern for matching multiple files (e.g., `**/*.ttf`).
+
+=== Pure Ruby
+
+Excavate is a 100% pure Ruby gem:
+
+* No native extensions or compiled dependencies
+* Works on MRI, JRuby, and TruffleRuby
+* Cross-platform: Linux, macOS, Windows, BSD
+
+=== Next Steps
+
+Start with <<installation,Installation>> if you haven't installed Excavate yet,
+or jump to <<quick-start,Quick Start>> to begin extracting archives immediately.

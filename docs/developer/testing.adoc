@@ -1,0 +1,215 @@
+---
+title: Testing
+parent: Developer Documentation
+nav_order: 4
+---
+
+== Testing
+
+=== Purpose
+
+Running and writing tests for Excavate.
+
+=== Running Tests
+
+==== All Tests
+
+[source,bash]
+----
+bundle exec rspec
+----
+
+==== Specific File
+
+[source,bash]
+----
+bundle exec rspec spec/archive_spec.rb
+----
+
+==== Specific Test
+
+[source,bash]
+----
+bundle exec rspec spec/archive_spec.rb:42
+----
+
+==== With Coverage
+
+[source,bash]
+----
+COVERAGE=true bundle exec rspec
+----
+
+=== Test Structure
+
+Tests are organized by component:
+
+[source]
+----
+spec/
+├── spec_helper.rb
+├── archive_spec.rb
+├── cli_spec.rb
+├── file_magic_spec.rb
+├── extractors/
+│   ├── cab_extractor_spec.rb
+│   ├── zip_extractor_spec.rb
+│   └── ...
+└── fixtures/
+    ├── test.zip
+    ├── test.tar.gz
+    └── ...
+----
+
+=== Writing Tests
+
+==== Basic Structure
+
+[source,ruby]
+----
+RSpec.describe Excavate::Archive do
+  describe '#extract' do
+    let(:archive) { 'spec/fixtures/test.zip' }
+    let(:target) { Dir.mktmpdir }
+
+    it 'extracts archive to target' do
+      described_class.new(archive).extract(target)
+
+      expect(Dir.glob("#{target}/*")).not_to be_empty
+    end
+  end
+end
+----
+
+==== Testing Errors
+
+[source,ruby]
+----
+describe '#extract' do
+  it 'raises TargetExistsError when target exists' do
+    FileUtils.mkdir_p(target)
+
+    expect {
+      described_class.new(archive).extract(target)
+    }.to raise_error(Excavate::TargetExistsError)
+  end
+end
+----
+
+==== Testing with Temp Directories
+
+[source,ruby]
+----
+describe '#extract' do
+  around do |example|
+    Dir.mktmpdir do |dir|
+      @temp_dir = dir
+      example.run
+    end
+  end
+
+  it 'uses temp directory' do
+    target = File.join(@temp_dir, 'output')
+    # ...
+  end
+end
+----
+
+=== Fixtures
+
+Test archives are in `spec/fixtures/`:
+
+[source]
+----
+spec/fixtures/
+├── test.zip        # Basic ZIP
+├── test.tar        # Basic TAR
+├── test.tar.gz     # Compressed TAR
+├── test.cab        # CAB archive
+├── test.msi        # MSI installer
+├── nested.zip      # Archive with nested archive
+└── empty.zip       # Empty archive
+----
+
+=== Test Patterns
+
+==== Testing Extraction
+
+[source,ruby]
+----
+it 'extracts all files' do
+  archive = described_class.new(fixture_path)
+  archive.extract(target)
+
+  files = Dir.glob("#{target}/**/*").select { |f| File.file?(f) }
+  expect(files.size).to be > 0
+end
+----
+
+==== Testing Recursive Extraction
+
+[source,ruby]
+----
+it 'extracts nested archives recursively' do
+  archive = described_class.new(msi_path)
+  archive.extract(target, recursive_packages: true)
+
+  # Should not contain .cab files
+  cabs = Dir.glob("#{target}/**/*.cab")
+  expect(cabs).to be_empty
+
+  # Should contain extracted files
+  expect(Dir.glob("#{target}/**/*")).not_to be_empty
+end
+----
+
+==== Testing Filters
+
+[source,ruby]
+----
+it 'extracts only matching files' do
+  archive = described_class.new(zip_path)
+  files = archive.extract(target, filter: '**/*.txt')
+
+  expect(files).to all(match(/\.txt$/))
+end
+----
+
+=== CLI Testing
+
+[source,ruby]
+----
+describe Excavate::CLI do
+  def run_cli(*args)
+    output = StringIO.new
+    $stdout = output
+
+    begin
+      described_class.start(args)
+    ensure
+      $stdout = STDOUT
+    end
+
+    output.string
+  end
+
+  it 'extracts archive' do
+    result = run_cli('extract', fixture_path)
+
+    expect(result).to include('Successfully extracted')
+  end
+end
+----
+
+=== Best Practices
+
+. **Isolation**: Each test should be independent
+. **Cleanup**: Clean up temp files after tests
+. **Speed**: Keep tests fast
+. **Readability**: Use descriptive names
+. **Coverage**: Test edge cases and errors
+
+=== See Also
+
+* <<contributing,Contributing>>
+* <<code-style,Code Style>>

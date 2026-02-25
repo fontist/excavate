@@ -1,0 +1,120 @@
+---
+title: Glossary
+parent: Resources
+nav_order: 2
+---
+
+== Glossary
+
+=== Purpose
+
+Definitions of terms used in Excavate documentation.
+
+=== Terms
+
+==== Archive
+
+A single file containing one or more files with metadata. Archives may be
+compressed to reduce size.
+
+==== CAB
+
+Microsoft Cabinet format. A Windows archive format commonly used for software
+distribution and system files.
+
+==== Compound Archive
+
+An archive that combines multiple formats, such as `.tar.gz` (TAR archived then
+GZIP compressed).
+
+==== Compression
+
+The process of reducing file size using algorithms. Common algorithms include
+Deflate, LZMA, and LZX.
+
+==== CPIO
+
+Copy In/Out format. A Unix archive format used in RPM packages and macOS
+installer payloads.
+
+==== Extraction
+
+The process of decompressing and writing archive contents to disk.
+
+==== Extractor
+
+A class that handles extraction for a specific archive format.
+
+==== Facade
+
+A design pattern providing a simplified interface to complex subsystems.
+`Excavate::Archive` is a facade.
+
+==== Filter
+
+A glob pattern used to select files for extraction.
+
+==== Format Detection
+
+The process of identifying an archive's format by extension or content.
+
+==== GZIP
+
+GNU ZIP compression format. Often used with TAR for `.tar.gz` files.
+
+==== Magic Bytes
+
+Byte sequences at the beginning of a file that identify its format.
+
+==== MSI
+
+Microsoft Installer format. A Windows installer package format that contains
+embedded CAB archives.
+
+==== Nested Archive
+
+An archive contained within another archive. Common in MSI and PKG formats.
+
+==== OLE
+
+Object Linking and Embedding. A Microsoft compound document format used by MSI
+files.
+
+==== PKG
+
+macOS installer package format. An XAR archive containing CPIO payloads.
+
+==== Pure Ruby
+
+Implemented entirely in Ruby without native extensions or compiled code.
+
+==== Recursive Extraction
+
+Automatically extracting archives within archives.
+
+==== RPM
+
+Red Hat Package Manager format. A Linux package format containing compressed
+CPIO payloads.
+
+==== TAR
+
+Tape Archive format. A Unix archive format that preserves file metadata.
+
+==== XAR
+
+eXtensible ARchive format. Used by macOS for `.pkg` installer packages.
+
+==== XZ
+
+High-compression format using LZMA algorithm. Often used with TAR for
+`.tar.xz` files.
+
+==== ZIP
+
+Standard cross-platform archive format using Deflate compression.
+
+=== See Also
+
+* xref:../concepts/index.adoc[Concepts]
+* xref:../guides/formats/index.adoc[Format Guides]

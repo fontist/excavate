@@ -1,0 +1,204 @@
+---
+title: Selective Extraction
+parent: Basic Usage
+grand_parent: Guides
+nav_order: 2
+---
+
+== Selective Extraction
+
+=== Purpose
+
+This guide covers extracting specific files from an archive rather than all
+contents.
+
+=== References
+
+* xref:../../reference/api.adoc[API Reference]
+
+=== Concepts
+
+Selective extraction allows you to extract only specific files from an archive,
+saving time and disk space when you only need certain files.
+
+=== Basic Selective Extraction
+
+Use the `files` option to specify which files to extract:
+
+[source,ruby]
+----
+# Extract specific files
+Excavate::Archive.new('data.tar.gz').extract(
+  files: ['config/settings.json', 'data/users.csv']
+)
+# Returns: ["/path/to/config/settings.json", "/path/to/data/users.csv"]
+----
+
+=== Return Value
+
+When using selective extraction, the return value is an array of extracted file
+paths instead of the target directory:
+
+[source,ruby]
+----
+# Full extraction returns directory path
+target = Excavate::Archive.new('archive.zip').extract
+# => "/path/to/archive"
+
+# Selective extraction returns file paths
+files = Excavate::Archive.new('archive.zip').extract(files: ['readme.txt'])
+# => ["/path/to/readme.txt"]
+----
+
+=== Nested Archive Paths
+
+When extracting from nested archives (with `recursive_packages: true`), use
+paths that include the nested archive name:
+
+[source,ruby]
+----
+# Extract file from CAB inside MSI
+Excavate::Archive.new('setup.msi').extract(
+  files: ['data1.cab/config.ini'],
+  recursive_packages: true
+)
+----
+
+The path format is: `nested_archive_name/path/to/file`
+
+=== Multiple Files
+
+Extract multiple files at once:
+
+[source,ruby]
+----
+files = Excavate::Archive.new('backup.tar').extract(
+  files: [
+    'etc/hosts',
+    'etc/resolv.conf',
+    'home/user/.bashrc'
+  ]
+)
+----
+
+=== With Recursive Extraction
+
+Combine selective extraction with recursive extraction:
+
+[source,ruby]
+----
+# Extract specific files from nested archives
+Excavate::Archive.new('installer.msi').extract(
+  files: [
+    'fonts.zip/Arial.ttf',
+    'fonts.zip/Verdana.ttf'
+  ],
+  recursive_packages: true
+)
+----
+
+=== Error Handling
+
+If a specified file is not found:
+
+[source,ruby]
+----
+begin
+  Excavate::Archive.new('data.zip').extract(files: ['missing.txt'])
+rescue Excavate::TargetNotFoundError => e
+  puts "File not found: #{e.message}"
+  # => "File `missing.txt` not found."
+end
+----
+
+=== Finding File Paths
+
+To discover what files are available in an archive:
+
+[source,ruby]
+----
+# List all files in an archive
+Excavate::Archive.new('archive.zip').files(recursive_packages: true) do |path|
+  puts path
+end
+----
+
+Or use the CLI:
+
+[source,bash]
+----
+# Extract and list to see structure
+excavate -r archive.zip
+
+# Then search
+find archive -name "*.conf"
+----
+
+=== CLI Usage
+
+Extract specific files from the command line:
+
+[source,bash]
+----
+# Extract specific files
+excavate data.tar.gz config/settings.json data/users.csv
+
+# Extract from nested archive
+excavate -r installer.msi fonts.zip/Arial.ttf
+----
+
+=== Performance Benefits
+
+Selective extraction is more efficient when you only need certain files:
+
+* Faster extraction (fewer files to process)
+* Less disk space used
+* Reduced I/O operations
+
+[source,ruby]
+----
+# Instead of extracting everything
+Excavate::Archive.new('large.tar.gz').extract  # Slow, large
+
+# Extract only what you need
+Excavate::Archive.new('large.tar.gz').extract(
+  files: ['config.json']  # Fast, small
+)
+----
+
+=== Common Patterns
+
+==== Extract Configuration Files
+
+[source,ruby]
+----
+config_files = Excavate::Archive.new('backup.tar').extract(
+  files: [
+    'etc/nginx/nginx.conf',
+    'etc/mysql/my.cnf',
+    'etc/redis/redis.conf'
+  ]
+)
+----
+
+==== Extract Font Files from Installer
+
+[source,ruby]
+----
+# First, find available fonts
+fonts = []
+Excavate::Archive.new('fonts.msi').files(recursive_packages: true) do |path|
+  fonts << path if path.end_with?('.ttf')
+end
+
+# Then extract them
+Excavate::Archive.new('fonts.msi').extract(
+  files: fonts,
+  recursive_packages: true
+)
+----
+
+=== Next Steps
+
+* Learn <<filter-patterns,Filter Patterns>> for pattern-based extraction
+* See <<file-iteration,File Iteration>> for processing files during extraction

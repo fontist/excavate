@@ -1,0 +1,116 @@
+---
+title: Archive Formats
+parent: Concepts
+nav_order: 1
+---
+
+== Archive Formats
+
+=== Purpose
+
+Understanding the fundamentals of archive formats supported by Excavate.
+
+=== Concepts
+
+An archive format is a file format that combines multiple files and metadata
+into a single file. Different formats have different characteristics for
+compression, platform support, and features.
+
+=== Format Categories
+
+==== Compressed Archives
+
+Single files with compression:
+
+* GZIP (`.gz`) - Single file compression
+* XZ (`.xz`) - High compression ratio
+
+==== Archive Containers
+
+Multiple files without compression:
+
+* TAR (`.tar`) - Unix tape archive
+* CPIO (`.cpio`) - Unix copy in/out
+
+==== Combined Formats
+
+Compression + archiving:
+
+* TAR.GZ (`.tar.gz`) - TAR + GZIP
+* TAR.XZ (`.tar.xz`) - TAR + XZ
+
+==== Platform-Specific
+
+* CAB (`.cab`) - Microsoft Cabinet
+* MSI (`.msi`) - Windows Installer
+* RPM (`.rpm`) - Red Hat Package
+* PKG (`.pkg`) - macOS Package
+
+=== Format Characteristics
+
+[cols="1,1,1,1"]
+|===
+| Format | Compression | Multi-file | Platform
+
+| ZIP
+| Yes
+| Yes
+| Cross-platform
+
+| TAR
+| No
+| Yes
+| Unix
+
+| TAR.GZ
+| Yes
+| Yes
+| Unix
+
+| 7-Zip
+| Yes
+| Yes
+| Cross-platform
+
+| CAB
+| Yes
+| Yes
+| Windows
+
+| MSI
+| Yes (nested)
+| Yes
+| Windows
+
+| RPM
+| Yes (nested)
+| Yes
+| Linux
+
+| PKG
+| Yes (nested)
+| Yes
+| macOS
+|===
+
+=== Nested Archives
+
+Some formats commonly contain other archives:
+
+.MSI:: Contains CAB archives
+.PKG:: Contains CPIO.GZ payload
+.RPM:: Contains CPIO.GZ payload
+.EXE:: May contain 7-Zip or CAB
+
+=== Format Selection
+
+Choose formats based on:
+
+* **Platform**: Windows (MSI, CAB), Linux (RPM, TAR), macOS (PKG)
+* **Compression**: Highest (7-Zip, XZ), Fast (GZIP), None (TAR)
+* **Compatibility**: Most compatible (ZIP), Platform-specific (MSI, RPM)
+
+=== See Also
+
+* xref:../guides/formats/index.adoc[Format Guides]
+* xref:../guides/formats/format-comparison.adoc[Format Comparison]

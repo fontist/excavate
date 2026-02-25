@@ -1,0 +1,187 @@
+---
+title: Error Classes
+parent: Reference
+nav_order: 3
+---
+
+== Error Classes
+
+=== Purpose
+
+Reference for all Excavate error classes.
+
+=== Error Hierarchy
+
+[source]
+----
+Excavate::Error (base class)
+├── TargetExistsError
+├── TargetNotEmptyError
+├── TargetNotFoundError
+└── UnknownArchiveError
+----
+
+=== Base Class
+
+==== Excavate::Error
+
+Base class for all Excavate errors.
+
+[source,ruby]
+----
+begin
+  # Any extraction operation
+rescue Excavate::Error => e
+  puts "Extraction failed: #{e.message}"
+end
+----
+
+=== Specific Errors
+
+==== TargetExistsError
+
+Raised when the target file or directory already exists.
+
+[source,ruby]
+----
+begin
+  Excavate::Archive.new('file.zip').extract
+rescue Excavate::TargetExistsError => e
+  puts e.message  # "Target file `file` already exists."
+end
+----
+
+.Common causes:
+* Running extraction twice to same target
+* Target file/directory exists from previous operation
+
+.Solutions:
+* Use a different target directory
+* Remove existing target before extraction
+
+==== TargetNotEmptyError
+
+Raised when the target directory exists and is not empty.
+
+[source,ruby]
+----
+begin
+  Excavate::Archive.new('file.zip').extract('/existing/dir')
+rescue Excavate::TargetNotEmptyError => e
+  puts e.message  # "Target directory `dir` is not empty."
+end
+----
+
+.Common causes:
+* Extracting to a directory with existing files
+* Partial extraction left files behind
+
+.Solutions:
+* Clean the directory before extraction
+* Use a fresh target directory
+
+==== TargetNotFoundError
+
+Raised when a specified file or filter pattern matches nothing.
+
+[source,ruby]
+----
+# Missing file
+begin
+  Excavate::Archive.new('data.zip').extract(files: ['missing.txt'])
+rescue Excavate::TargetNotFoundError => e
+  puts e.message  # "File `missing.txt` not found."
+end
+
+# No filter match
+begin
+  Excavate::Archive.new('fonts.zip').extract(filter: '*.pdf')
+rescue Excavate::TargetNotFoundError => e
+  puts e.message  # "Filter `*.pdf` matched no file."
+end
+----
+
+.Common causes:
+* Incorrect file path
+* Wrong filter pattern
+* File not in archive
+
+.Solutions:
+* List archive contents first
+* Adjust filter pattern
+* Verify file exists
+
+==== UnknownArchiveError
+
+Raised when the archive format is not recognized.
+
+[source,ruby]
+----
+begin
+  Excavate::Archive.new('unknown.dat').extract
+rescue Excavate::UnknownArchiveError => e
+  puts e.message  # "Could not unarchive `unknown.dat`."
+end
+----
+
+.Common causes:
+* File has wrong extension
+* File is corrupted
+* Format not supported
+
+.Solutions:
+* Verify file extension
+* Check file integrity
+* Confirm format is supported
+
+=== Complete Error Handling
+
+[source,ruby]
+----
+def safe_extract(archive_path, target)
+  begin
+    archive = Excavate::Archive.new(archive_path)
+    archive.extract(target)
+    { success: true, target: target }
+  rescue Excavate::TargetExistsError => e
+    { success: false, error: :target_exists, message: e.message }
+  rescue Excavate::TargetNotEmptyError => e
+    { success: false, error: :target_not_empty, message: e.message }
+  rescue Excavate::TargetNotFoundError => e
+    { success: false, error: :target_not_found, message: e.message }
+  rescue Excavate::UnknownArchiveError => e
+    { success: false, error: :unknown_format, message: e.message }
+  rescue Excavate::Error => e
+    { success: false, error: :general_error, message: e.message }
+  end
+end
+----
+
+=== CLI Exit Codes
+
+The CLI maps errors to exit codes:
+
+[cols="1,1,3"]
+|===
+| Code | Error | Description
+
+| 0
+| -
+| Success
+
+| 1
+| Unknown
+| Unexpected error
+
+| 2
+| TargetExistsError
+| Target already exists
+
+| 3
+| TargetNotEmptyError
+| Target not empty
+
+| 4
+| TargetNotFoundError
+| File not found
+|===
