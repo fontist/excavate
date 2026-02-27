@@ -28,14 +28,18 @@ module Excavate
       end
 
       def extract_tar_xz(target)
-        # Decompress XZ to get gzip data
-        gzip_data = Omnizip::Formats::Xz.decompress(@archive)
-        # Decompress gzip to get tar data
-        tar_data = Zlib::GzipReader.new(StringIO.new(gzip_data)).read
+        # Decompress XZ layer
+        data = Omnizip::Formats::Xz.decompress(@archive)
+
+        # Some archives are XZ(GZIP(TAR)), others are XZ(TAR).
+        # Detect gzip magic bytes (1f 8b) and decompress if needed.
+        if data.byteslice(0, 2) == "\x1f\x8b".b
+          data = Zlib::GzipReader.new(StringIO.new(data)).read
+        end
 
         # Write tar file and extract
         temp_tar = File.join(target, ".temp_#{Time.now.to_i}_#{rand(1000)}.tar")
-        File.binwrite(temp_tar, tar_data)
+        File.binwrite(temp_tar, data)
 
         TarExtractor.new(temp_tar).extract(target)
       ensure
