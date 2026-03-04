@@ -28,14 +28,9 @@ module Excavate
       end
 
       def extract_tar_xz(target)
-        # Decompress XZ layer
         data = Omnizip::Formats::Xz.decompress(@archive)
-
-        # Some archives are XZ(GZIP(TAR)), others are XZ(TAR).
-        # Detect gzip magic bytes (1f 8b) and decompress if needed.
-        if data.byteslice(0, 2) == "\x1f\x8b".b
-          data = Zlib::GzipReader.new(StringIO.new(data)).read
-        end
+        data = strip_compression(data)
+        validate_tar!(data)
 
         # Write tar file and extract
         temp_tar = File.join(target, ".temp_#{Time.now.to_i}_#{rand(1000)}.tar")
@@ -44,6 +39,20 @@ module Excavate
         TarExtractor.new(temp_tar).extract(target)
       ensure
         File.delete(temp_tar) if temp_tar && File.exist?(temp_tar)
+      end
+
+      def strip_compression(data)
+        return Zlib::GzipReader.new(StringIO.new(data)).read if FileMagic.detect_bytes(data) == :gzip
+
+        data
+      end
+
+      def validate_tar!(data)
+        inner_type = FileMagic.detect_bytes(data)
+        return if inner_type == :tar
+
+        raise UnknownArchiveError,
+              "Expected tar inside #{@archive}, got #{inner_type || 'unknown format'}"
       end
 
       def extract_pure_xz(target)
