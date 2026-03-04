@@ -1,0 +1,146 @@
+---
+title: RPM Format
+parent: Archive Formats
+grand_parent: Guides
+nav_order: 3
+---
+
+== RPM Format
+
+=== Purpose
+
+This guide covers working with Red Hat Package Manager (RPM) files using
+Excavate.
+
+=== References
+
+* https://rpm.org/[RPM Package Manager]
+
+=== Concepts
+
+RPM (Red Hat Package Manager) is a package format used primarily by Linux
+distributions. RPM files contain compressed CPIO payloads with the actual
+package files.
+
+=== Basic Usage
+
+==== Extract RPM Package
+
+[source,ruby]
+----
+# Basic extraction (CPIO payload remains compressed)
+Excavate::Archive.new('package.rpm').extract
+
+# Recursive extraction (payload is fully extracted)
+Excavate::Archive.new('package.rpm').extract(recursive_packages: true)
+----
+
+=== RPM Structure
+
+RPM files contain:
+
+[source]
+----
+package.rpm
+├── Lead            # Legacy header (obsolete)
+├── Signature       # Package signatures
+├── Header          # Package metadata
+└── Payload         # Compressed CPIO archive
+    ├── usr/bin/    # Executables
+    ├── usr/lib/    # Libraries
+    └── usr/share/  # Documentation, data
+----
+
+=== When to Use Recursive
+
+Use `recursive_packages: true` to extract file contents:
+
+[source,ruby]
+----
+# Without recursive - you get payload.cpio.gz
+Excavate::Archive.new('package.rpm').extract
+# Result: package/payload.cpio.gz
+
+# With recursive - you get actual files
+Excavate::Archive.new('package.rpm').extract(recursive_packages: true)
+# Result: package/usr/bin/..., package/usr/lib/..., etc.
+----
+
+=== Extracting Specific Content
+
+==== Extract Executables
+
+[source,ruby]
+----
+Excavate::Archive.new('package.rpm').extract(
+  recursive_packages: true,
+  filter: '**/bin/*'
+)
+----
+
+==== Extract Documentation
+
+[source,ruby]
+----
+docs = Excavate::Archive.new('package.rpm').extract(
+  recursive_packages: true,
+  filter: '**/share/doc/**/*'
+)
+----
+
+=== Common Use Cases
+
+==== Analyze RPM Contents
+
+[source,ruby]
+----
+# List all files in an RPM
+Excavate::Archive.new('package.rpm').files(recursive_packages: true) do |path|
+  puts path
+end
+----
+
+==== Extract Configuration Files
+
+[source,ruby]
+----
+Excavate::Archive.new('package.rpm').extract(
+  recursive_packages: true,
+  filter: '**/etc/**/*'
+)
+----
+
+=== CLI Usage
+
+[source,bash]
+----
+# Extract RPM recursively
+excavate -r package.rpm
+
+# Extract with filter
+excavate -r --filter "**/bin/*" package.rpm
+----
+
+=== Technical Details
+
+Excavate uses the Omnizip gem's RPM support:
+
+* Extracts RPM lead, signature, and header
+* Decompresses payload based on compression type
+* Names output based on RPM metadata
+
+=== Supported Payload Compressions
+
+RPM payloads may use various compressions:
+
+* GZIP (`.cpio.gz`)
+* XZ (`.cpio.xz`)
+* BZIP2 (`.cpio.bz2`)
+* Zstandard (`.cpio.zst`)
+
+All are handled automatically with recursive extraction.
+
+=== Related Topics
+
+* <<tar-format,TAR Format>> - Related Unix archive format
+* <<../advanced-usage/recursive-extraction,Recursive Extraction>>

@@ -1,0 +1,389 @@
+---
+title: Basic Usage
+parent: Getting Started
+nav_order: 3
+---
+
+== Basic Usage
+
+=== Installation
+
+Add to your Gemfile:
+
+[source,ruby]
+----
+gem "excavate"
+----
+
+Or install directly:
+
+[source,bash]
+----
+gem install excavate
+----
+
+== Basic Extraction
+
+The simplest way to extract an archive:
+
+[source,ruby]
+----
+require "excavate"
+
+# Extract to auto-created directory
+Excavate::Archive.new("package.zip").extract
+# Creates ./package/ directory with contents
+
+# Extract to specific directory
+Excavate::Archive.new("package.zip").extract("/path/to/target")
+----
+
+=== Automatic Target Directory
+
+When no target is specified, Excavate creates a directory with the archive's
+base name (without extension) in the current working directory.
+
+=== Target Directory Rules
+
+The target directory must be empty. If it exists and contains files, a
+`TargetNotEmptyError` is raised. This prevents accidental overwriting.
+
+[source,ruby]
+----
+# This will raise TargetNotEmptyError if ./package/ exists and is not empty
+Excavate::Archive.new("package.zip").extract("./package")
+----
+
+== Recursive Extraction
+
+Extract nested archives automatically. This is particularly useful for:
+
+- MSI installers containing CAB files
+- Self-extracting executables
+- Complex software distributions
+- macOS installer packages (PKG)
+
+[source,ruby]
+----
+# Extract MSI and all nested CAB files
+Excavate::Archive.new("installer.msi").extract(recursive_packages: true)
+
+# Result: All files from MSI and nested CABs in target directory
+----
+
+=== How Recursive Extraction Works
+
+. Extract the top-level archive
+. Scan extracted files for nested archives
+. Extract each nested archive
+. Replace archive with its contents
+. Repeat until no more nested archives found
+
+=== Example: MSI Installation
+
+[source,ruby]
+----
+# MSI files contain nested CAB archives
+Excavate::Archive.new("fonts.msi").extract(recursive_packages: true)
+
+# Before: fonts.msi contains data1.cab, data2.cab
+# After: Target directory contains all font files directly
+----
+
+=== Example: macOS PKG
+
+[source,ruby]
+----
+# PKG files are XAR archives containing CPIO payloads
+Excavate::Archive.new("Installer.pkg").extract(recursive_packages: true)
+
+# Automatically extracts XAR, then CPIO, then GZIP
+----
+
+== Selective Extraction
+
+Extract only specific files from an archive:
+
+[source,ruby]
+----
+# Extract specific files by path
+Excavate::Archive.new("data.tar.gz").extract(
+  files: ["config/settings.json", "data/users.csv"]
+)
+
+# Extract from nested archives
+Excavate::Archive.new("package.msi").extract(
+  files: ["fonts.zip/Arial.ttf"],
+  recursive_packages: true
+)
+----
+
+If a specified file is not found, a `TargetNotFoundError` is raised.
+
+=== Nested Archive Paths
+
+When extracting from nested archives, use the format `archive/path/to/file`:
+
+[source,ruby]
+----
+# Extract file from CAB inside MSI
+Excavate::Archive.new("setup.msi").extract(
+  files: ["data1.cab/config.ini"],
+  recursive_packages: true
+)
+----
+
+== Filter-Based Extraction
+
+Extract files matching a glob pattern:
+
+[source,ruby]
+----
+# Extract all TrueType fonts
+Excavate::Archive.new("fonts.zip").extract(filter: "**/*.ttf")
+
+# Extract configuration files
+Excavate::Archive.new("backup.tar").extract(filter: "etc/**/*.conf")
+
+# Extract multiple extensions
+Excavate::Archive.new("assets.zip").extract(filter: "**/*.{png,jpg,svg}")
+----
+
+=== Glob Pattern Syntax
+
+The filter supports standard glob patterns:
+
+[cols="1,3"]
+|===
+| Pattern | Description
+
+| `*`
+| Matches any characters except `/`
+
+| `**`
+| Matches any directories recursively
+
+| `?`
+| Matches any single character
+
+| `[abc]`
+| Matches any character in brackets
+
+| `{a,b}`
+| Matches either pattern
+|===
+
+=== Pattern Examples
+
+[source,ruby]
+----
+# All JavaScript files
+filter: "**/*.js"
+
+# Files in specific directory
+filter: "src/**/*.rb"
+
+# Multiple file types
+filter: "**/*.{html,css,js}"
+
+# Specific filename pattern
+filter: "**/test_*.rb"
+----
+
+== File Iteration
+
+Use the `files` method to process extracted files without managing directories:
+
+[source,ruby]
+----
+# Collect all font files
+fonts = Excavate::Archive.new("package.zip").files(
+  recursive_packages: true,
+  filter: "**/*.ttf"
+) do |file_path|
+  puts "Found: #{file_path}"
+  file_path
+end
+
+puts "Total fonts: #{fonts.size}"
+----
+
+The `files` method:
+
+. Creates a temporary directory
+. Extracts files based on parameters
+. Yields each file path to your block
+. Cleans up the temporary directory
+. Returns an array of block results
+
+=== Processing During Extraction
+
+[source,ruby]
+----
+# Analyze files during extraction
+result = Excavate::Archive.new("logs.tar.gz").files do |path|
+  {
+    path: path,
+    size: File.size(path),
+    ext: File.extname(path)
+  }
+end
+
+# result is an array of hashes
+----
+
+== Working with Different Formats
+
+=== Windows Installers (MSI)
+
+MSI files are OLE compound documents containing CAB archives:
+
+[source,ruby]
+----
+# Extract MSI and all embedded CABs
+Excavate::Archive.new("setup.msi").extract(recursive_packages: true)
+
+# MSI structure:
+# setup.msi
+# ├── data1.cab (extracted automatically)
+# ├── data2.cab (extracted automatically)
+# └── final files
+----
+
+=== Self-Extracting Archives
+
+EXE files may be 7-Zip or CAB self-extracting archives:
+
+[source,ruby]
+----
+# Automatically detects format
+Excavate::Archive.new("installer.exe").extract(recursive_packages: true)
+
+# Falls back from 7z to CAB if needed
+----
+
+=== RPM Packages
+
+RPM files contain compressed CPIO payloads:
+
+[source,ruby]
+----
+# Extract RPM package
+Excavate::Archive.new("package.rpm").extract(recursive_packages: true)
+
+# Extracts payload.cpio.gz automatically
+----
+
+=== Compressed Tarballs
+
+Common Unix formats are fully supported:
+
+[source,ruby]
+----
+Excavate::Archive.new("package.tar.gz").extract(recursive_packages: true)
+Excavate::Archive.new("package.tar.xz").extract(recursive_packages: true)
+Excavate::Archive.new("package.tar.bz2").extract(recursive_packages: true)
+----
+
+=== macOS Packages
+
+XAR-based packages (`.pkg`):
+
+[source,ruby]
+----
+Excavate::Archive.new("Installer.pkg").extract(recursive_packages: true)
+
+# PKG structure:
+# Installer.pkg
+# ├── Distribution (XML)
+# └── Package.pkg (nested archive)
+#     └── Payload (CPIO.GZ)
+----
+
+== Command-Line Interface
+
+Excavate includes a CLI for quick extraction tasks:
+
+[source,bash]
+----
+# Basic extraction
+excavate package.zip
+
+# Recursive extraction
+excavate --recursive installer.msi
+
+# Extract specific files
+excavate data.tar.gz config/settings.json
+
+# Filter by pattern
+excavate --filter "**/*.ttf" fonts.zip
+
+# Combine options
+excavate --recursive --filter "**/*.conf" package.msi
+----
+
+See xref:../reference/cli.adoc[CLI Reference] for complete documentation.
+
+== Error Handling
+
+Excavate provides specific error classes:
+
+[source,ruby]
+----
+require "excavate"
+
+begin
+  Excavate::Archive.new("archive.zip").extract("/existing/dir")
+rescue Excavate::TargetNotEmptyError => e
+  puts "Directory not empty: #{e.message}"
+rescue Excavate::TargetNotFoundError => e
+  puts "File not found: #{e.message}"
+rescue Excavate::UnknownArchiveError => e
+  puts "Unsupported format: #{e.message}"
+rescue Excavate::Error => e
+  puts "Extraction failed: #{e.message}"
+end
+----
+
+=== Error Classes
+
+[cols="1,3"]
+|===
+| Error | Description
+
+| `TargetExistsError`
+| Target file or directory already exists
+
+| `TargetNotEmptyError`
+| Target directory is not empty
+
+| `TargetNotFoundError`
+| Requested file or pattern not found in archive
+
+| `UnknownArchiveError`
+| Archive format not recognized
+|===
+
+== Rails Integration
+
+Excavate works with Rails uploaded files:
+
+[source,ruby]
+----
+class UploadsController < ApplicationController
+  def upload
+    archive = Excavate::Archive.new(params[:file])
+
+    # Extract to temporary directory
+    target = Dir.mktmpdir
+    archive.extract(target, recursive_packages: true)
+
+    # Process extracted files
+    # ...
+  ensure
+    FileUtils.rm_rf(target)
+  end
+end
+----
+
+The archive parameter accepts any object responding to `original_filename`.

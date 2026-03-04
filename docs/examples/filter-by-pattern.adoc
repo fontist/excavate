@@ -1,0 +1,166 @@
+---
+title: Filter by Pattern
+parent: Examples
+nav_order: 3
+---
+
+== Filter by Pattern
+
+=== Purpose
+
+Extract files matching specific patterns from archives.
+
+=== Problem
+
+You need to extract only files matching certain criteria from an archive.
+
+=== Solution
+
+Use the `filter` option with glob patterns:
+
+[source,ruby]
+----
+require 'excavate'
+
+# Extract all Ruby files
+ruby_files = Excavate::Archive.new('project.tar.gz').extract(
+  filter: '**/*.rb'
+)
+
+# Extract configuration files
+configs = Excavate::Archive.new('backup.tar').extract(
+  filter: '**/*.{json,yaml,yml,toml}'
+)
+
+# Extract files from specific directory
+src_files = Excavate::Archive.new('code.zip').extract(
+  filter: 'src/**/*'
+)
+----
+
+=== Complete Example
+
+[source,ruby]
+----
+require 'excavate'
+
+class PatternExtractor
+  # Common filter patterns
+  PATTERNS = {
+    ruby: '**/*.rb',
+    python: '**/*.py',
+    javascript: '**/*.{js,jsx,ts,tsx}',
+    config: '**/*.{json,yaml,yml,toml,ini,conf}',
+    images: '**/*.{png,jpg,jpeg,gif,svg,webp}',
+    fonts: '**/*.{ttf,otf,woff,woff2}',
+    docs: '**/*.{md,txt,rst,adoc}',
+    tests: '**/{test,spec}/**/*',
+    executables: '**/*.{exe,dll,so,dylib}'
+  }
+
+  def initialize(archive_path)
+    @archive = Excavate::Archive.new(archive_path)
+  end
+
+  def extract_by_type(type, target = nil)
+    pattern = PATTERNS[type]
+    raise "Unknown type: #{type}" unless pattern
+
+    options = { filter: pattern }
+    options[:recursive_packages] = true
+
+    if target
+      @archive.extract(target, **options)
+    else
+      @archive.extract(**options)
+    end
+  end
+
+  def extract_multiple(types, target = nil)
+    patterns = types.map { |t| PATTERNS[t] }.compact
+    combined = "{#{patterns.join(',')}}"
+
+    options = { filter: combined, recursive_packages: true }
+
+    if target
+      @archive.extract(target, **options)
+    else
+      @archive.extract(**options)
+    end
+  end
+
+  def count_by_pattern
+    results = {}
+
+    PATTERNS.each do |type, pattern|
+      count = 0
+      @archive.files(filter: pattern, recursive_packages: true) do
+        count += 1
+      end
+      results[type] = count
+    end
+
+    results
+  end
+end
+
+# Usage
+extractor = PatternExtractor.new('project.tar.gz')
+
+# Count files by type
+counts = extractor.count_by_pattern
+puts "File counts:"
+counts.each { |type, count| puts "  #{type}: #{count}" }
+
+# Extract specific types
+extractor.extract_by_type(:ruby)
+extractor.extract_by_type(:config)
+
+# Extract multiple types at once
+extractor.extract_multiple([:ruby, :python, :javascript])
+----
+
+=== CLI Examples
+
+[source,bash]
+----
+# Extract Ruby files
+excavate --filter "**/*.rb" project.tar.gz
+
+# Extract images
+excavate --filter "**/*.{png,jpg}" assets.zip
+
+# Extract from nested archives
+excavate -r --filter "**/*.dll" installer.msi
+
+# Extract documentation
+excavate --filter "**/*.md" docs.zip
+----
+
+=== Pattern Reference
+
+[cols="1,3"]
+|===
+| Pattern | Matches
+
+| `*.txt`
+| Files ending in .txt at root level
+
+| `**/*.txt`
+| All .txt files in any directory
+
+| `src/**/*.rb`
+| Ruby files under src/
+
+| `**/test_*.rb`
+| Files starting with test_ in any directory
+
+| `**/*.{json,yaml}`
+| Files with .json or .yaml extension
+
+| `config/**/*`
+| All files under config/
+
+| `**/README*`
+| Files starting with README anywhere
+|===

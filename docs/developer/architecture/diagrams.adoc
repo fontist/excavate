@@ -1,0 +1,154 @@
+---
+title: Architecture Diagrams
+parent: Architecture
+grand_parent: Developer Documentation
+nav_order: 5
+---
+
+== Architecture Diagrams
+
+=== Purpose
+
+Visual representation of Excavate's architecture.
+
+=== Class Diagram
+
+[source]
+----
+┌─────────────────────────────────────────────────────────────────┐
+│                      Excavate::Archive                          │
+│─────────────────────────────────────────────────────────────────│
+│ - archive_path: String                                          │
+│─────────────────────────────────────────────────────────────────│
+│ + initialize(archive_path)                                      │
+│ + extract(target, **options): String                            │
+│ + files(**options, &block): Array                               │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │ uses
+                                │
+┌───────────────────────────────┴─────────────────────────────────┐
+│                      Extractors::Extractor                      │
+│─────────────────────────────────────────────────────────────────│
+│ # archive: String                                               │
+│─────────────────────────────────────────────────────────────────│
+│ + initialize(archive)                                           │
+│ + extract(target): void                                         │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │
+          ┌─────────────────────┼─────────────────────┐
+          │                     │                     │
+          ▼                     ▼                     ▼
+┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐
+│ CabExtractor    │   │ ZipExtractor    │   │ TarExtractor    │
+│─────────────────│   │─────────────────│   │─────────────────│
+│ + extract()     │   │ + extract()     │   │ + extract()     │
+└────────┬────────┘   └────────┬────────┘   └────────┬────────┘
+         │                     │                     │
+         │ uses                │ uses                │ uses
+         ▼                     ▼                     ▼
+┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐
+│   Cabriolet     │   │    Omnizip      │   │    Omnizip      │
+└─────────────────┘   └─────────────────┘   └─────────────────┘
+----
+
+=== Extraction Flow
+
+[source]
+----
+┌─────────────┐
+│   Archive   │
+│ .new(path)  │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────────┐
+│ .extract(target)│
+└──────┬──────────┘
+       │
+       ▼
+┌─────────────────┐     No      ┌───────────────────┐
+│ Target exists?  │────────────▶│ TargetExistsError │
+└──────┬──────────┘             └───────────────────┘
+       │ Yes
+       ▼
+┌─────────────────┐     No      ┌───────────────────┐
+│ Extension known?│────────────▶│ UnknownArchive    │
+└──────┬──────────┘             └───────────────────┘
+       │ Yes
+       ▼
+┌─────────────────┐
+│ Select extractor│
+└──────┬──────────┘
+       │
+       ▼
+┌─────────────────┐
+│ Extractor.new() │
+│ .extract(target)│
+└──────┬──────────┘
+       │
+       ▼
+┌─────────────────┐     Yes     ┌───────────────────┐
+│ Recursive?      │────────────▶│ Extract nested    │
+└──────┬──────────┘             └───────────────────┘
+       │ No
+       ▼
+┌─────────────────┐
+│ Return target   │
+└─────────────────┘
+----
+
+=== Format Registry
+
+[source]
+----
+┌─────────────────────────────────────────────────────┐
+│                    TYPES Hash                       │
+├─────────────────────────────────────────────────────┤
+│ "cab"  => CabExtractor                             │
+│ "cpio" => CpioExtractor                            │
+│ "exe"  => SevenZipExtractor                        │
+│ "gz"   => GzipExtractor                            │
+│ "msi"  => OleExtractor                             │
+│ "pkg"  => XarExtractor                             │
+│ "rpm"  => RpmExtractor                             │
+│ "tar"  => TarExtractor                             │
+│ "xz"   => XzExtractor                              │
+│ "zip"  => ZipExtractor                             │
+└─────────────────────────────────────────────────────┘
+----
+
+=== Dependency Graph
+
+[source]
+----
+┌─────────────────────────────────────────────────────┐
+│                    Excavate                         │
+├─────────────────────────────────────────────────────┤
+│ Dependencies:                                       │
+│   - omnizip ~> 0.3.8                               │
+│   - cabriolet ~> 0.2.2                             │
+│   - thor ~> 1.0                                    │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  ┌─────────────┐    ┌─────────────┐                │
+│  │  Omnizip    │    │ Cabriolet   │                │
+│  │             │    │             │                │
+│  │ • ZIP       │    │ • CAB       │                │
+│  │ • 7-Zip     │    │ • CHM       │                │
+│  │ • TAR       │    │ • SZDD      │                │
+│  │ • GZIP      │    │ • KWAJ      │                │
+│  │ • XZ        │    │             │                │
+│  │ • CPIO      │    │             │                │
+│  │ • RPM       │    │             │                │
+│  │ • OLE/MSI   │    │             │                │
+│  │ • XAR       │    │             │                │
+│  └─────────────┘    └─────────────┘                │
+│                                                     │
+│  All pure Ruby - no native dependencies            │
+└─────────────────────────────────────────────────────┘
+----
+
+=== See Also
+
+* <<design-principles,Design Principles>>
+* <<extractor-pattern,Extractor Pattern>>

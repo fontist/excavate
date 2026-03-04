@@ -1,0 +1,260 @@
+---
+title: Batch Processing
+parent: Use Cases
+grand_parent: Guides
+nav_order: 3
+---
+
+== Batch Processing
+
+=== Purpose
+
+This guide covers processing multiple archives efficiently.
+
+=== References
+
+* <<../advanced-usage/performance-tuning,Performance Tuning>>
+* <<../advanced-usage/error-handling,Error Handling>>
+
+=== Concepts
+
+Batch processing involves extracting multiple archives with proper error
+handling and progress tracking.
+
+=== Basic Batch Processing
+
+==== Process All Archives in Directory
+
+[source,ruby]
+----
+Dir.glob('archives/*.{zip,tar.gz,msi}').each do |archive_path|
+  begin
+    archive = Excavate::Archive.new(archive_path)
+    target = File.basename(archive_path, '.*')
+
+    archive.extract(target, recursive_packages: true)
+    puts "Extracted: #{archive_path}"
+  rescue Excavate::Error => e
+    puts "Failed: #{archive_path} - #{e.message}"
+  end
+end
+----
+
+==== Track Results
+
+[source,ruby]
+----
+results = []
+
+Dir.glob('archives/*').each do |archive_path|
+  result = {
+    path: archive_path,
+    success: false,
+    error: nil
+  }
+
+  begin
+    archive = Excavate::Archive.new(archive_path)
+    archive.extract(recursive_packages: true)
+    result[:success] = true
+  rescue Excavate::Error => e
+    result[:error] = e.message
+  end
+
+  results << result
+end
+
+# Summary
+succeeded = results.count { |r| r[:success] }
+failed = results.count { |r| !r[:success] }
+puts "Processed: #{results.size}, Succeeded: #{succeeded}, Failed: #{failed}"
+
+# Show failures
+results.reject { |r| r[:success] }.each do |r|
+  puts "Failed: #{r[:path]} - #{r[:error]}"
+end
+----
+
+=== Filtered Batch Processing
+
+==== Extract Specific File Types
+
+[source,ruby]
+----
+# Extract only text files from all archives
+Dir.glob('archives/*').each do |archive_path|
+  begin
+    Excavate::Archive.new(archive_path).extract(
+      recursive_packages: true,
+      filter: '**/*.txt'
+    )
+  rescue Excavate::Error
+    next  # Skip failed archives
+  end
+end
+----
+
+==== Collect Specific Content
+
+[source,ruby]
+----
+all_configs = []
+
+Dir.glob('packages/*.msi').each do |msi_path|
+  configs = Excavate::Archive.new(msi_path).files(
+    recursive_packages: true,
+    filter: '**/*.json'
+  ) do |path|
+    { source: msi_path, path: path, content: File.read(path) }
+  end
+
+  all_configs.concat(configs)
+end
+
+puts "Found #{all_configs.size} config files"
+----
+
+=== Progress Tracking
+
+==== Simple Progress
+
+[source,ruby]
+----
+archives = Dir.glob('archives/*')
+total = archives.size
+
+archives.each_with_index do |archive_path, index|
+  puts "[#{index + 1}/#{total}] Processing: #{archive_path}"
+
+  begin
+    Excavate::Archive.new(archive_path).extract(recursive_packages: true)
+    puts "  ✓ Done"
+  rescue Excavate::Error => e
+    puts "  ✗ Failed: #{e.message}"
+  end
+end
+----
+
+==== Detailed Progress
+
+[source,ruby]
+----
+require 'time'
+
+archives = Dir.glob('archives/*')
+start_time = Time.now
+completed = 0
+failed = 0
+
+archives.each do |archive_path|
+  archive_start = Time.now
+
+  begin
+    Excavate::Archive.new(archive_path).extract(recursive_packages: true)
+    completed += 1
+    status = "✓"
+  rescue Excavate::Error => e
+    failed += 1
+    status = "✗ #{e.message}"
+  end
+
+  elapsed = Time.now - archive_start
+  puts "[#{completed + failed}/#{archives.size}] #{status} #{archive_path} (#{elapsed.round(1)}s)"
+end
+
+total_time = Time.now - start_time
+puts "-" * 60
+puts "Completed: #{completed}, Failed: #{failed}"
+puts "Total time: #{total_time.round(1)}s"
+----
+
+=== CLI Batch Script
+
+[source,bash]
+----
+#!/bin/bash
+set -e
+
+# Batch extract all archives
+for archive in archives/*; do
+  name=$(basename "$archive" | sed 's/\.[^.]*$//')
+
+  if [ -d "$name" ]; then
+    echo "Skipping $name (exists)"
+    continue
+  fi
+
+  echo "Extracting $archive..."
+  excavate -r "$archive" || echo "Failed: $archive"
+done
+
+echo "Done!"
+----
+
+=== Parallel Processing
+
+For independent archives, use parallel processing:
+
+[source,ruby]
+----
+# Note: Requires 'parallel' gem
+require 'parallel'
+
+archives = Dir.glob('archives/*.zip')
+
+Parallel.each(archives, in_threads: 4) do |archive_path|
+  begin
+    Excavate::Archive.new(archive_path).extract(
+      recursive_packages: true
+    )
+  rescue Excavate::Error => e
+    puts "Failed: #{archive_path} - #{e.message}"
+  end
+end
+----
+
+=== Error Recovery
+
+==== Retry Failed Extractions
+
+[source,ruby]
+----
+def extract_with_retry(archive_path, max_retries: 3)
+  retries = 0
+
+  loop do
+    begin
+      return Excavate::Archive.new(archive_path).extract(recursive_packages: true)
+    rescue Excavate::Error => e
+      retries += 1
+      if retries >= max_retries
+        raise
+      end
+      puts "Retry #{retries}/#{max_retries}: #{archive_path}"
+      sleep 1
+    end
+  end
+end
+----
+
+==== Clean Up on Failure
+
+[source,ruby]
+----
+archives.each do |archive_path|
+  target = File.basename(archive_path, '.*')
+
+  begin
+    Excavate::Archive.new(archive_path).extract(target, recursive_packages: true)
+  rescue Excavate::Error => e
+    # Clean up partial extraction
+    FileUtils.rm_rf(target)
+    puts "Failed and cleaned: #{archive_path}"
+  end
+end
+----
+
+=== Related Topics
+
+* <<../advanced-usage/performance-tuning,Performance Tuning>>
+* <<../advanced-usage/error-handling,Error Handling>>

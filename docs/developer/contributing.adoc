@@ -1,0 +1,139 @@
+---
+title: Contributing
+parent: Developer Documentation
+nav_order: 2
+---
+
+== Contributing
+
+=== Purpose
+
+How to contribute to Excavate.
+
+=== Getting Started
+
+==== Fork and Clone
+
+[source,bash]
+----
+# Fork the repository on GitHub
+# Then clone your fork
+git clone https://github.com/YOUR_USERNAME/excavate.git
+cd excavate
+
+# Add upstream remote
+git remote add upstream https://github.com/omnizip/excavate.git
+----
+
+==== Install Dependencies
+
+[source,bash]
+----
+bundle install
+----
+
+==== Run Tests
+
+[source,bash]
+----
+bundle exec rspec
+----
+
+=== Development Workflow
+
+==== Create a Branch
+
+[source,bash]
+----
+git checkout -b feature/my-new-feature
+----
+
+==== Make Changes
+
+* Follow the <<code-style,code style guide>>
+* Add tests for new functionality
+* Update documentation if needed
+
+==== Run Checks
+
+[source,bash]
+----
+# Run tests
+bundle exec rspec
+
+# Run linter
+bundle exec rubocop
+
+# Auto-fix linting issues
+bundle exec rubocop -A
+----
+
+==== Commit Changes
+
+Use semantic commit messages:
+
+[source]
+----
+feat(extractor): add support for RAR format
+fix(archive): handle empty archives correctly
+docs(readme): update installation instructions
+test(extractor): add tests for edge cases
+----
+
+==== Push and Create PR
+
+[source,bash]
+----
+git push origin feature/my-new-feature
+----
+
+Then create a pull request on GitHub.
+
+=== Contribution Guidelines
+
+==== Code Quality
+
+* All code must pass Rubocop
+* All tests must pass
+* New features need tests
+* Breaking changes need discussion
+
+==== Documentation
+
+* Update README.adoc for user-facing changes
+* Update API docs for interface changes
+* Add inline comments for complex logic
+
+==== Testing
+
+* Maintain or improve test coverage
+* Test edge cases and error conditions
+* Use descriptive test names
+
+=== Reporting Issues
+
+When reporting issues, include:
+
+* Excavate version
+* Ruby version
+* Operating system
+* Minimal reproduction code
+* Sample archive if relevant
+
+=== Feature Requests
+
+For feature requests:
+
+* Check if already requested
+* Describe the use case
+* Explain expected behavior
+* Consider contributing implementation
+
+=== Code of Conduct
+
+Be respectful and inclusive. Treat all contributors with respect.
+
+=== See Also
+
+* <<code-style,Code Style>>
+* <<testing,Testing>>

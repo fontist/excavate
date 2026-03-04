@@ -1,0 +1,54 @@
+---
+title: Resources
+nav_order: 7
+has_children: true
+---
+
+== Resources
+
+=== Purpose
+
+Reference materials, cheat sheets, and additional resources.
+
+=== Topics
+
+[cols="1,4"]
+|===
+| Resource | Description
+
+| <<quick-reference,Quick Reference>>
+| CLI and API cheat sheet
+
+| <<glossary,Glossary>>
+| Terms and definitions
+
+| <<faq,FAQ>>
+| Frequently asked questions
+
+| <<compatibility,Compatibility>>
+| Platform and Ruby compatibility
+
+| <<performance,Performance>>
+| Performance characteristics
+
+| <<migration,Migration>>
+| Migrating from other tools
+
+| <<omnizip-suite,Omnizip Suite>>
+| Integration with related tools
+|===
+
+=== Quick Links
+
+* <<quick-reference,Quick Reference>>
+* <<faq,FAQ>>
+
+=== External Resources
+
+* https://github.com/omnizip/excavate[GitHub Repository]
+* https://rubygems.org/gems/excavate[RubyGems]
+* https://omnizip.github.io[Omnizip Website]
+
+=== Next Steps
+
+Browse the resources for quick reference and additional information.

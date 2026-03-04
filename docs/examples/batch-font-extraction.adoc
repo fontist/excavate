@@ -1,0 +1,137 @@
+---
+title: Batch Font Extraction
+parent: Examples
+nav_order: 2
+---
+
+== Batch Font Extraction
+
+=== Purpose
+
+Extract font files from multiple archives and installers.
+
+=== Problem
+
+You have a collection of font archives (ZIP, MSI, CAB) and need to extract all
+font files from them.
+
+=== Solution
+
+Process each archive with recursive extraction and font-specific filters:
+
+[source,ruby]
+----
+require 'excavate'
+require 'fileutils'
+
+class FontExtractor
+  FONT_EXTENSIONS = '{ttf,otf,woff,woff2}'
+
+  def initialize(source_dir, output_dir)
+    @source_dir = source_dir
+    @output_dir = output_dir
+    FileUtils.mkdir_p(@output_dir)
+  end
+
+  def extract_all
+    results = { success: 0, failed: 0, fonts: [] }
+
+    archives.each do |archive_path|
+      begin
+        fonts = extract_fonts(archive_path)
+        results[:success] += 1
+        results[:fonts].concat(fonts)
+        puts "✓ #{archive_path}: #{fonts.size} fonts"
+      rescue Excavate::Error => e
+        results[:failed] += 1
+        puts "✗ #{archive_path}: #{e.message}"
+      end
+    end
+
+    puts "-" * 60
+    puts "Processed: #{results[:success]} archives"
+    puts "Failed: #{results[:failed]} archives"
+    puts "Total fonts: #{results[:fonts].size}"
+
+    results
+  end
+
+  private
+
+  def archives
+    Dir.glob(File.join(@source_dir, '**/*.{zip,msi,cab,7z}'))
+  end
+
+  def extract_fonts(archive_path)
+    fonts = []
+
+    Excavate::Archive.new(archive_path).files(
+      recursive_packages: true,
+      filter: "**/*.#{FONT_EXTENSIONS}"
+    ) do |source|
+      font_name = File.basename(source)
+      target = File.join(@output_dir, font_name)
+
+      # Handle duplicates
+      if File.exist?(target)
+        base = File.basename(font_name, '.*')
+        ext = File.extname(font_name)
+        target = File.join(@output_dir, "#{base}_#{Time.now.to_i}#{ext}")
+      end
+
+      FileUtils.cp(source, target)
+      fonts << target
+    end
+
+    fonts
+  end
+end
+
+# Usage
+extractor = FontExtractor.new(
+  source_dir: '/path/to/font/archives',
+  output_dir: '/path/to/output/fonts'
+)
+
+extractor.extract_all
+----
+
+=== CLI Alternative
+
+[source,bash]
+----
+#!/bin/bash
+
+OUTPUT_DIR="/path/to/fonts"
+mkdir -p "$OUTPUT_DIR"
+
+# Process all archives
+for archive in /path/to/archives/*.{zip,msi,cab}; do
+  [ -f "$archive" ] || continue
+
+  echo "Processing: $archive"
+
+  # Create temp directory
+  TEMP_DIR=$(mktemp -d)
+
+  # Extract fonts
+  excavate -r --filter "**/*.{ttf,otf}" "$archive" 2>/dev/null
+
+  # Copy fonts to output
+  find "$(basename "$archive" | sed 's/\.[^.]*$//')/" \
+    -type f \( -name "*.ttf" -o -name "*.otf" \) \
+    -exec cp {} "$OUTPUT_DIR/" \; 2>/dev/null
+
+  # Cleanup
+  rm -rf "$TEMP_DIR"
+  rm -rf "$(basename "$archive" | sed 's/\.[^.]*$//')"
+done
+
+echo "Fonts extracted to: $OUTPUT_DIR"
+----
+
+=== Notes
+
+* Handle duplicate font names appropriately
+* Filter for specific font types as needed
+* Consider disk space for large collections

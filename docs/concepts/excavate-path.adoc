@@ -1,0 +1,199 @@
+---
+title: Excavate Path
+parent: Concepts
+nav_order: 5
+---
+
+== Excavate Path
+
+=== Purpose
+
+Understanding excavate paths - virtual paths through nested archives.
+
+=== What is an Excavate Path?
+
+An **excavate path** is a virtual path that traverses through nested archives,
+allowing you to specify the exact location of a file within archive layers.
+
+=== Why Excavate Paths?
+
+Without excavate paths, extracting a file from nested archives requires:
+
+. Extract the outer archive
+. Identify nested archives
+. Extract each nested archive
+. Navigate to the desired file
+
+With excavate paths, you specify the complete path in one operation:
+
+[source,ruby]
+----
+Excavate::Archive.new('bundle.zip').extract(
+  files: ['inner.zip/file.txt']
+)
+----
+
+NOTE: When using the `files:` option, `recursive_packages` is automatically
+enabled, so you don't need to specify it explicitly.
+
+=== Path Syntax
+
+The excavate path uses forward slashes to separate components:
+
+----
+nested_archive_name/path/to/file
+----
+
+Each segment represents:
+
+. **Nested archive name** - The filename (with extension) of a nested archive
+. **Path to file** - The path within that nested archive to the target file
+
+=== Path Resolution
+
+Given this nested structure:
+
+[source]
+----
+bundle.zip                    # Level 0: ZIP archive
+├── readme.txt
+└── inner.zip                 # Level 1: ZIP inside ZIP
+    ├── manifest.xml
+    └── data/
+        └── config.json
+----
+
+==== Example Paths
+
+[cols="1,3"]
+|===
+| Target | Excavate Path
+
+| readme.txt
+| `readme.txt`
+
+| manifest.xml
+| `inner.zip/manifest.xml`
+
+| config.json
+| `inner.zip/data/config.json`
+|===
+
+=== Current Support
+
+Excavate supports **arbitrary levels of nesting** for excavate paths. You can
+extract files from archives nested multiple levels deep using a single path.
+
+==== Multi-Level Nesting Example
+
+Given this structure:
+
+[source]
+----
+multi_nested.zip               # Level 0: ZIP archive
+├── file_at_root.txt
+└── level1.zip/               # Level 1: ZIP inside ZIP
+    ├── file_at_level1.txt
+    └── level2.zip/           # Level 2: ZIP inside ZIP inside ZIP
+        ├── file_at_level2.txt
+        └── level3.zip/       # Level 3: Deepest level
+            └── file_at_deepest.txt
+----
+
+You can extract files from any level:
+
+[source,ruby]
+----
+# Extract from root level
+Excavate::Archive.new('multi_nested.zip').extract(
+  files: ['file_at_root.txt']
+)
+
+# Extract from level 1
+Excavate::Archive.new('multi_nested.zip').extract(
+  files: ['level1.zip/file_at_level1.txt']
+)
+
+# Extract from level 2
+Excavate::Archive.new('multi_nested.zip').extract(
+  files: ['level1.zip/level2.zip/file_at_level2.txt']
+)
+
+# Extract from level 3 (deepest)
+Excavate::Archive.new('multi_nested.zip').extract(
+  files: ['level1.zip/level2.zip/level3.zip/file_at_deepest.txt']
+)
+
+# Extract from multiple levels at once
+Excavate::Archive.new('multi_nested.zip').extract(
+  files: [
+    'file_at_root.txt',
+    'level1.zip/file_at_level1.txt',
+    'level1.zip/level2.zip/level3.zip/file_at_deepest.txt'
+  ]
+)
+----
+
+=== How It Works
+
+The resolution process uses an "extract and replace" approach:
+
+. Extract the outer archive to a temporary directory
+. For each extracted archive file:
+  .. Extract it recursively
+  .. Replace the archive file with a directory containing its contents
+. Search for files matching the specified path
+
+This process repeats automatically until no more nested archives are found,
+enabling extraction from arbitrarily deep nesting levels.
+
+=== Limitations
+
+* Archive names must match exactly (case-sensitive on Unix)
+* Path separators must be forward slashes (`/`)
+* The path must exist in the actual archive structure
+
+=== Best Practices
+
+==== Use Relative Paths
+
+Always use relative paths from the archive root:
+
+[source,ruby]
+----
+# Good
+files: ['inner.zip/config.json']
+
+# Bad - absolute path doesn't work
+files: ['/inner.zip/config.json']
+----
+
+==== Verify Structure First
+
+When unsure of the structure, list contents first:
+
+[source,ruby]
+----
+# Discover the structure
+archive.files(recursive_packages: true) do |path|
+  puts path
+end
+----
+
+==== Handle Missing Files
+
+Use error handling for missing paths:
+
+[source,ruby]
+----
+begin
+  archive.extract(files: ['some/path/file.txt'])
+rescue Excavate::TargetNotFoundError => e
+  puts "Path not found: #{e.message}"
+end
+----
+
+=== See Also
+
+* xref:../recursive-extraction.adoc[Recursive Extraction]
+* xref:../../guides/basic-usage/selective-extraction.adoc[Selective Extraction]

@@ -1,0 +1,174 @@
+---
+title: Extension Mapping
+parent: Format Reference
+grand_parent: Reference
+nav_order: 2
+---
+
+== Extension Mapping
+
+=== Purpose
+
+Reference for how file extensions map to extractors.
+
+=== Simple Extensions
+
+Extensions that map directly to a single extractor:
+
+[cols="1,2,2"]
+|===
+| Extension | Extractor | Format
+
+| `.7z`
+| SevenZipExtractor
+| 7-Zip
+
+| `.cab`
+| CabExtractor
+| Microsoft Cabinet
+
+| `.cpio`
+| CpioExtractor
+| CPIO
+
+| `.gz`
+| GzipExtractor
+| GZIP
+
+| `.msi`
+| OleExtractor
+| Windows Installer
+
+| `.pkg`
+| XarExtractor
+| macOS Package
+
+| `.rpm`
+| RpmExtractor
+| Red Hat Package
+
+| `.tar`
+| TarExtractor
+| TAR
+
+| `.xar`
+| XarExtractor
+| XAR
+
+| `.xz`
+| XzExtractor
+| XZ
+
+| `.zip`
+| ZipExtractor
+| ZIP
+|===
+
+=== Compound Extensions
+
+Extensions that trigger multiple extractors in sequence:
+
+[cols="1,2,3"]
+|===
+| Extension | Extraction Chain | Result
+
+| `.tar.gz`
+| GzipExtractor → TarExtractor
+| Extracted TAR contents
+
+| `.tgz`
+| GzipExtractor → TarExtractor
+| Extracted TAR contents
+
+| `.tar.xz`
+| XzExtractor → TarExtractor
+| Extracted TAR contents
+
+| `.txz`
+| XzExtractor → TarExtractor
+| Extracted TAR contents
+|===
+
+=== Special Cases
+
+==== EXE Files
+
+EXE files are handled with fallback logic:
+
+[source,ruby]
+----
+# Order of attempts:
+1. SevenZipExtractor  # Try 7-Zip self-extracting
+2. CabExtractor       # Fall back to CAB self-extracting
+----
+
+==== Detection Logic
+
+[source,ruby]
+----
+def extract(target)
+  extension = File.extname(@archive).downcase
+
+  case extension
+  when '.exe'
+    # Try 7-Zip first, then CAB
+    begin
+      SevenZipExtractor.new(@archive).extract(target)
+    rescue
+      CabExtractor.new(@archive).extract(target)
+    end
+  when '.gz'
+    # Verify GZIP magic bytes
+    if gzip_magic?(@archive)
+      GzipExtractor.new(@archive).extract(target)
+    else
+      raise UnknownArchiveError
+    end
+  else
+    # Standard extension mapping
+    extractor = TYPES[extension]
+    extractor.new(@archive).extract(target)
+  end
+end
+----
+
+=== Implementation
+
+The TYPES hash maps extensions to extractors:
+
+[source,ruby]
+----
+TYPES = {
+  "cab"  => Extractors::CabExtractor,
+  "cpio" => Extractors::CpioExtractor,
+  "exe"  => Extractors::SevenZipExtractor,
+  "gz"   => Extractors::GzipExtractor,
+  "msi"  => Extractors::OleExtractor,
+  "pkg"  => Extractors::XarExtractor,
+  "rpm"  => Extractors::RpmExtractor,
+  "tar"  => Extractors::TarExtractor,
+  "xz"   => Extractors::XzExtractor,
+  "zip"  => Extractors::ZipExtractor
+}
+----
+
+=== Adding New Formats
+
+To support a new format:
+
+. Create a new extractor class
+. Add mapping to TYPES hash
+. Handle compound extensions if needed
+
+[source,ruby]
+----
+# 1. Create extractor
+class Extractors::NewFormatExtractor < Extractor
+  def extract(target)
+    # Implementation
+  end
+end
+
+# 2. Add to TYPES
+TYPES["newfmt"] = Extractors::NewFormatExtractor
+----

@@ -1,0 +1,225 @@
+---
+title: Quick Start
+parent: Getting Started
+nav_order: 2
+---
+
+== Quick start guide
+
+=== Purpose
+
+This 5-minute guide gets you extracting archive files immediately. You'll learn
+the essential commands to work with multiple archive formats using both the CLI
+and Ruby API.
+
+=== References
+
+* https://rubygems.org/gems/excavate[Excavate on RubyGems]
+
+=== Concepts
+
+Excavate provides a unified interface for extracting archives across multiple
+compression and archive formats. The same commands work for ZIP, 7-Zip, TAR,
+CAB, MSI, RPM, XAR, and more without needing to specify the format manually.
+
+=== Prerequisites
+
+Ensure Excavate is installed:
+
+[source,bash]
+----
+excavate --version
+----
+
+If not installed, see <<installation,Installation Guide>>.
+
+=== Step 1: Get a Sample Archive
+
+For this tutorial, you can use any supported archive file:
+
+* ZIP files (`.zip`)
+* TAR files (`.tar`, `.tar.gz`, `.tar.xz`)
+* MSI installers (`.msi`)
+* 7-Zip archives (`.7z`)
+* CAB files (`.cab`)
+* RPM packages (`.rpm`)
+* macOS packages (`.pkg`)
+
+=== Step 2: Extract an Archive
+
+The most common operation is extracting an archive:
+
+[source,bash]
+----
+excavate package.zip
+----
+
+This creates a `package/` directory with the extracted contents.
+
+.Example Output
+[source,text]
+----
+Successfully extracted to package/
+----
+
+=== Step 3: Recursive Extraction
+
+Extract nested archives automatically (e.g., MSI containing CAB files):
+
+[source,bash]
+----
+excavate --recursive installer.msi
+----
+
+Or using the short form:
+
+[source,bash]
+----
+excavate -r installer.msi
+----
+
+This extracts the MSI and any nested archives inside it.
+
+=== Step 4: Extract Specific Files
+
+Extract only certain files from an archive:
+
+[source,bash]
+----
+excavate data.tar.gz config/settings.json data/users.csv
+----
+
+=== Step 5: Filter by Pattern
+
+Extract files matching a pattern:
+
+[source,bash]
+----
+# Extract all TrueType fonts
+excavate --filter "**/*.ttf" fonts.zip
+
+# Extract configuration files
+excavate --filter "etc/**/*.conf" backup.tar
+----
+
+=== Using the Ruby API
+
+The same operations in Ruby code:
+
+.Basic extraction
+[source,ruby]
+----
+require 'excavate'
+
+# Extract to auto-created directory
+Excavate::Archive.new('package.zip').extract
+
+# Extract to specific directory
+Excavate::Archive.new('package.zip').extract('/path/to/output')
+----
+
+.Recursive extraction
+[source,ruby]
+----
+# Extract MSI with nested CAB files
+Excavate::Archive.new('installer.msi').extract(recursive_packages: true)
+----
+
+.Selective extraction
+[source,ruby]
+----
+# Extract specific files
+Excavate::Archive.new('data.tar.gz').extract(
+  files: ['config/settings.json', 'data/users.csv']
+)
+
+# Filter by pattern
+Excavate::Archive.new('fonts.zip').extract(filter: '**/*.ttf')
+----
+
+.File iteration
+[source,ruby]
+----
+# Process files during extraction
+Excavate::Archive.new('package.zip').files do |file_path|
+  puts "Found: #{file_path}"
+  File.size(file_path)
+end
+----
+
+=== Common Operations
+
+==== Extract Windows Installer
+
+[source,ruby]
+----
+# MSI files contain nested CAB archives
+Excavate::Archive.new('setup.msi').extract(recursive_packages: true)
+
+# Result: All files from MSI and embedded CABs
+----
+
+==== Extract macOS Package
+
+[source,ruby]
+----
+# PKG files are XAR archives with CPIO payloads
+Excavate::Archive.new('Installer.pkg').extract(recursive_packages: true)
+----
+
+==== Extract RPM Package
+
+[source,ruby]
+----
+# RPM files contain compressed CPIO payloads
+Excavate::Archive.new('package.rpm').extract(recursive_packages: true)
+----
+
+=== Troubleshooting
+
+==== "Target directory not empty" Error
+
+The target directory already contains files. Either:
+
+* Choose a different target directory
+* Remove the existing directory first
+
+[source,bash]
+----
+rm -rf package/
+excavate package.zip
+----
+
+==== "Could not unarchive" Error
+
+The archive format is not recognized. Check:
+
+* File has correct extension (`.zip`, `.tar.gz`, etc.)
+* File is not corrupted
+* Format is supported by Excavate
+
+==== "File not found" Error
+
+The specified file doesn't exist in the archive. List the contents first:
+
+[source,ruby]
+----
+archive = Excavate::Archive.new('data.zip')
+archive.files(recursive_packages: true) do |path|
+  puts path
+end
+----
+
+=== Next steps
+
+Now that you can extract archives:
+
+* Learn <<basic-usage,basic usage patterns>>
+* Explore <<../guides/index,format-specific guides>>
+* Check the <<../reference/cli.adoc,CLI reference>>
+* Review the <<../reference/api.adoc,API documentation>>
+
+=== Bibliography
+
+* https://github.com/omnizip/excavate[Excavate on GitHub]
+* https://github.com/omnizip/omnizip[Omnizip - underlying library]

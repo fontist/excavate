@@ -1,0 +1,331 @@
+---
+title: CLI Reference
+parent: Reference
+nav_order: 2
+---
+
+== CLI Reference
+
+Excavate provides a command-line interface for quick extraction tasks.
+
+== Installation
+
+The CLI is installed with the gem:
+
+[source,bash]
+----
+gem install excavate
+----
+
+The executable `excavate` will be available in your PATH.
+
+== Basic Usage
+
+[source,bash]
+----
+excavate [OPTIONS] ARCHIVE [FILES...]
+----
+
+If no command is specified, `extract` is assumed.
+
+== Commands
+
+=== extract (default)
+
+Extract files from an archive.
+
+[source,bash]
+----
+excavate extract [OPTIONS] ARCHIVE [FILES...]
+----
+
+Or simply:
+
+[source,bash]
+----
+excavate ARCHIVE [FILES...]
+----
+
+==== Options
+
+[cols="1,1,3"]
+|===
+| Option | Short | Description
+
+| `--recursive`
+| `-r`
+| Enable recursive extraction of nested archives
+
+| `--filter PATTERN`
+|
+| Extract only files matching glob pattern
+
+| `--help`
+| `-h`
+| Show help message
+|===
+
+==== Arguments
+
+ARCHIVE:: Path to the archive file to extract
+FILES:: Optional list of specific file paths to extract
+
+== Exit Codes
+
+Excavate uses specific exit codes for different outcomes:
+
+[cols="1,1,3"]
+|===
+| Code | Name | Description
+
+| 0
+| `STATUS_SUCCESS`
+| Extraction completed successfully
+
+| 1
+| `STATUS_UNKNOWN_ERROR`
+| An unexpected error occurred
+
+| 2
+| `STATUS_TARGET_EXISTS`
+| Target file or directory already exists
+
+| 3
+| `STATUS_TARGET_NOT_EMPTY`
+| Target directory is not empty
+
+| 4
+| `STATUS_TARGET_NOT_FOUND`
+| Requested file not found in archive
+|===
+
+=== Using Exit Codes in Scripts
+
+[source,bash]
+----
+#!/bin/bash
+
+excavate package.zip
+case $? in
+  0) echo "Success" ;;
+  2) echo "Target exists" ;;
+  3) echo "Target not empty" ;;
+  4) echo "File not found" ;;
+  *) echo "Unknown error" ;;
+esac
+----
+
+== Examples
+
+=== Basic Extraction
+
+[source,bash]
+----
+# Extract to auto-created directory
+excavate package.zip
+# Creates ./package/ directory
+
+# Extract MSI installer
+excavate setup.msi
+
+# Extract TAR.GZ
+excavate archive.tar.gz
+----
+
+=== Recursive Extraction
+
+[source,bash]
+----
+# Extract MSI with nested CAB files
+excavate --recursive setup.msi
+
+# Short form
+excavate -r package.pkg
+
+# Process directory of archives
+excavate -r archives/
+----
+
+=== Selective Extraction
+
+[source,bash]
+----
+# Extract specific files
+excavate data.tar.gz config/settings.json data/users.csv
+
+# Extract from nested archive
+excavate -r package.msi fonts.zip/Arial.ttf
+
+# Multiple files from nested archives
+excavate -r installer.exe data.cab/config.ini data.cab/README.txt
+----
+
+=== Filter-Based Extraction
+
+[source,bash]
+----
+# Extract all TrueType fonts
+excavate --filter "**/*.ttf" fonts.zip
+
+# Extract configuration files
+excavate --filter "etc/**/*.conf" backup.tar
+
+# Multiple extensions
+excavate --filter "**/*.{png,jpg}" assets.zip
+
+# Specific directory
+excavate --filter "src/**/*.rb" project.tar.gz
+----
+
+=== Combined Options
+
+[source,bash]
+----
+# Recursive with filter
+excavate -r --filter "**/*.dll" installer.msi
+
+# Extract from nested archives with pattern
+excavate --recursive --filter "**/fonts/*.ttf" package.pkg
+
+# Multiple operations
+excavate -r --filter "**/*.{json,yaml}" config.tar.gz
+----
+
+== Output
+
+On success, the CLI prints the target directory or files:
+
+[source,bash]
+----
+$ excavate package.zip
+Successfully extracted to package/
+
+$ excavate --filter "*.ttf" fonts.zip
+Successfully extracted to Arial.ttf, Verdana.ttf
+
+$ excavate -r installer.msi
+Successfully extracted to installer/
+----
+
+== Error Messages
+
+[source,bash]
+----
+$ excavate package.zip
+Target directory `package` is not empty.
+
+$ excavate data.zip missing.txt
+File `missing.txt` not found.
+
+$ excavate unknown.dat
+Could not unarchive `unknown.dat`.
+
+$ excavate --filter "*.pdf" fonts.zip
+Filter `*.pdf` matched no file.
+----
+
+== Shell Script Integration
+
+The CLI is designed for easy scripting:
+
+=== Batch Processing
+
+[source,bash]
+----
+#!/bin/bash
+set -e
+
+# Extract all installers in a directory
+for msi in installers/*.msi; do
+  excavate -r "$msi"
+done
+----
+
+=== Error Handling
+
+[source,bash]
+----
+#!/bin/bash
+
+excavate package.zip
+exit_code=$?
+
+if [ $exit_code -eq 0 ]; then
+  echo "Extraction successful"
+elif [ $exit_code -eq 3 ]; then
+  echo "Directory not empty, cleaning..."
+  rm -rf package/
+  excavate package.zip
+else
+  echo "Extraction failed with code $exit_code"
+  exit 1
+fi
+----
+
+=== Conditional Extraction
+
+[source,bash]
+----
+#!/bin/bash
+
+archive="$1"
+output_dir="$2"
+
+# Extract only if directory doesn't exist
+if [ ! -d "$output_dir" ]; then
+  excavate -r "$archive"
+  mv "${archive%.*}" "$output_dir"
+fi
+----
+
+=== Find and Extract
+
+[source,bash]
+----
+#!/bin/bash
+
+# Find and extract all ZIP files
+find . -name "*.zip" -exec sh -c '
+  for zip; do
+    dir="${zip%.zip}"
+    excavate "$zip" 2>/dev/null || echo "Failed: $zip"
+  done
+' sh {} +
+----
+
+== Comparison with Other Tools
+
+[cols="1,1,1,1"]
+|===
+| Feature | excavate | unzip | tar
+
+| Multiple formats
+| Yes (10+)
+| ZIP only
+| TAR only
+
+| Recursive extraction
+| Yes
+| No
+| No
+
+| Selective extraction
+| Yes
+| Yes
+| Yes
+
+| Filter patterns
+| Yes (glob)
+| Limited
+| Limited
+
+| Pure Ruby
+| Yes
+| No
+| No
+
+| Cross-platform
+| Yes
+| Mostly
+| Yes
+|===

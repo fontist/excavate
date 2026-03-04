@@ -1,0 +1,181 @@
+---
+title: FAQ
+parent: Resources
+nav_order: 3
+---
+
+== FAQ
+
+=== Purpose
+
+Frequently asked questions about Excavate.
+
+=== General Questions
+
+==== What is Excavate?
+
+Excavate is a Ruby library for extracting archives across multiple formats. It
+provides a unified interface for ZIP, TAR, CAB, MSI, RPM, 7-Zip, and other
+formats.
+
+==== Is Excavate pure Ruby?
+
+Yes. Excavate is 100% pure Ruby with no native dependencies. It works on MRI,
+JRuby, and TruffleRuby.
+
+==== What formats are supported?
+
+ZIP, TAR, TAR.GZ, TAR.XZ, 7-Zip, CAB, MSI, RPM, PKG/XAR, CPIO, GZIP, and XZ.
+
+==== How is Excavate different from other archive libraries?
+
+Excavate focuses on extraction and provides:
+
+* Recursive extraction of nested archives
+* Unified interface for all formats
+* Pattern-based filtering
+* No native dependencies
+
+=== Installation
+
+==== What Ruby versions are supported?
+
+Ruby 2.7 or later. Works on MRI, JRuby, and TruffleRuby.
+
+==== What are the dependencies?
+
+All dependencies are pure Ruby:
+
+* omnizip (~> 0.3.8)
+* cabriolet (~> 0.2.2)
+* thor (~> 1.0)
+
+==== How do I install Excavate?
+
+[source,bash]
+----
+gem install excavate
+----
+
+Or add to Gemfile:
+
+[source,ruby]
+----
+gem 'excavate'
+----
+
+=== Usage
+
+==== How do I extract an archive?
+
+[source,ruby]
+----
+Excavate::Archive.new('file.zip').extract
+----
+
+==== How do I extract nested archives?
+
+Use `recursive_packages: true`:
+
+[source,ruby]
+----
+Excavate::Archive.new('installer.msi').extract(recursive_packages: true)
+----
+
+==== How do I extract specific files?
+
+Use the `files` option:
+
+[source,ruby]
+----
+Excavate::Archive.new('data.zip').extract(files: ['config.json'])
+----
+
+==== How do I extract by pattern?
+
+Use the `filter` option:
+
+[source,ruby]
+----
+Excavate::Archive.new('fonts.zip').extract(filter: '**/*.ttf')
+----
+
+=== Troubleshooting
+
+==== Why am I getting "Target exists" error?
+
+The target directory already exists. Either:
+
+* Remove the directory first
+* Use a different target path
+
+==== Why am I getting "Unknown archive" error?
+
+The file format is not recognized. Check:
+
+* File has correct extension
+* File is not corrupted
+* Format is supported
+
+==== Why is extraction slow?
+
+Possible causes:
+
+* Large archive size
+* Nested archives (recursive extraction)
+* Slow disk I/O
+
+Solutions:
+
+* Use filters to extract only needed files
+* Extract to fast local storage
+
+==== Why are some files missing after extraction?
+
+If using recursive extraction, nested archives are replaced with their contents.
+The original archive files are removed.
+
+=== Platform Questions
+
+==== Does Excavate work on Windows?
+
+Yes. Excavate handles Windows-specific issues like file locking.
+
+==== Does Excavate work on macOS?
+
+Yes. PKG/XAR format is fully supported.
+
+==== Does Excavate work on Linux?
+
+Yes. RPM and TAR formats are fully supported.
+
+=== Integration
+
+==== Can I use Excavate with Rails?
+
+Yes. Excavate works with Rails uploaded files:
+
+[source,ruby]
+----
+archive = Excavate::Archive.new(params[:file])
+archive.extract(target, recursive_packages: true)
+----
+
+==== Can I process files during extraction?
+
+Yes. Use the `files` method:
+
+[source,ruby]
+----
+archive.files do |path|
+  # Process file
+end
+----
+
+=== More Questions
+
+For additional questions:
+
+* Check the xref:../guides/index.adoc[Guides]
+* Review the xref:../reference/api.adoc[API Reference]
+* https://github.com/omnizip/excavate/issues[Open an issue]

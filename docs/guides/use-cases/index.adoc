@@ -1,0 +1,56 @@
+---
+title: Use Cases
+parent: Guides
+has_children: true
+---
+
+== Use Cases
+
+=== Purpose
+
+Real-world extraction scenarios and practical examples.
+
+=== Topics
+
+[cols="1,4"]
+|===
+| Guide | Description
+
+| <<font-extraction,Font Extraction>>
+| Extract fonts from installers and archives
+
+| <<installer-analysis,Installer Analysis>>
+| Analyze software installer contents
+
+| <<batch-processing,Batch Processing>>
+| Process multiple archives efficiently
+|===
+
+=== Quick Reference
+
+.Extract fonts from MSI
+[source,ruby]
+----
+Excavate::Archive.new('fonts.msi').extract(
+  recursive_packages: true,
+  filter: '**/*.{ttf,otf}'
+)
+----
+
+.Analyze installer contents
+[source,ruby]
+----
+Excavate::Archive.new('installer.msi').files(recursive_packages: true) do |path|
+  puts path
+end
+----
+
+.Batch process archives
+[source,ruby]
+----
+Dir.glob('*.zip').each { |f| Excavate::Archive.new(f).extract }
+----
+
+=== Next Steps
+
+Explore specific use cases for detailed examples and patterns.

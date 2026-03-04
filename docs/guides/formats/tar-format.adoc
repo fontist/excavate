@@ -1,0 +1,137 @@
+---
+title: TAR Format
+parent: Archive Formats
+grand_parent: Guides
+nav_order: 5
+---
+
+== TAR Format
+
+=== Purpose
+
+This guide covers working with Unix tape archive (TAR) files using Excavate.
+
+=== References
+
+* https://www.gnu.org/software/tar/[GNU Tar]
+
+=== Concepts
+
+TAR (Tape Archive) is a Unix archive format that combines multiple files into a
+single archive. TAR files are often compressed with GZIP, XZ, or BZIP2.
+
+=== Basic Usage
+
+==== Extract Plain TAR
+
+[source,ruby]
+----
+Excavate::Archive.new('archive.tar').extract
+----
+
+==== Extract Compressed TAR
+
+[source,ruby]
+----
+# TAR + GZIP
+Excavate::Archive.new('archive.tar.gz').extract
+Excavate::Archive.new('archive.tgz').extract
+
+# TAR + XZ
+Excavate::Archive.new('archive.tar.xz').extract
+Excavate::Archive.new('archive.txz').extract
+----
+
+=== TAR Characteristics
+
+[cols="1,2"]
+|===
+| Characteristic | Description
+
+| File extension
+| `.tar`, `.tar.gz`, `.tgz`, `.tar.xz`, `.txz`
+
+| Compression
+| None (plain), GZIP, XZ, BZIP2
+
+| Permissions
+| Preserves Unix permissions
+
+| Platform
+| Unix/Linux (primary)
+|===
+
+=== Compound Format Support
+
+Excavate handles compound TAR archives automatically:
+
+==== TAR + GZIP
+
+[source,ruby]
+----
+# Automatically extracts GZIP then TAR
+Excavate::Archive.new('package.tar.gz').extract
+----
+
+==== TAR + XZ
+
+[source,ruby]
+----
+# Automatically extracts XZ then TAR
+Excavate::Archive.new('package.tar.xz').extract
+----
+
+=== Common Use Cases
+
+==== Extract Source Code
+
+[source,ruby]
+----
+Excavate::Archive.new('project-1.0.tar.gz').extract
+----
+
+==== Extract Backup
+
+[source,ruby]
+----
+Excavate::Archive.new('backup.tar.gz').extract(
+  filter: 'home/user/**/*'
+)
+----
+
+==== Extract Specific Files
+
+[source,ruby]
+----
+Excavate::Archive.new('archive.tar.gz').extract(
+  files: ['README.md', 'LICENSE']
+)
+----
+
+=== CLI Usage
+
+[source,bash]
+----
+# Extract TAR.GZ
+excavate archive.tar.gz
+
+# Extract TAR.XZ
+excavate archive.tar.xz
+
+# Extract with filter
+excavate --filter "src/**/*.rb" project.tar.gz
+----
+
+=== Technical Details
+
+Excavate uses the Omnizip gem's TAR support:
+
+* Pure Ruby implementation
+* Handles various TAR formats (POSIX, GNU, PAX)
+* Preserves file permissions
+* Supports long filenames
+
+=== Related Topics
+
+* <<../advanced-usage/recursive-extraction,Recursive Extraction>>
+* xref:../../reference/api.adoc[API Reference]

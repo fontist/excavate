@@ -1,0 +1,265 @@
+---
+title: Filter Patterns
+parent: Basic Usage
+grand_parent: Guides
+nav_order: 3
+---
+
+== Filter Patterns
+
+=== Purpose
+
+This guide covers using glob patterns to extract files matching specific
+criteria.
+
+=== References
+
+* xref:../../reference/api.adoc[API Reference]
+
+=== Concepts
+
+Filter patterns use glob syntax to match multiple files at once. This is more
+flexible than specifying individual file paths and is ideal for extracting
+files by type, directory, or naming convention.
+
+=== Basic Filter Extraction
+
+Use the `filter` option with a glob pattern:
+
+[source,ruby]
+----
+# Extract all TrueType fonts
+Excavate::Archive.new('fonts.zip').extract(filter: '**/*.ttf')
+
+# Returns array of extracted file paths
+# => ["/path/to/Arial.ttf", "/path/to/Verdana.ttf", ...]
+----
+
+=== Glob Pattern Syntax
+
+Excavate supports standard glob patterns:
+
+[cols="1,4"]
+|===
+| Pattern | Description
+
+| `*`
+| Matches any characters except `/`
+
+| `**`
+| Matches any directories recursively
+
+| `?`
+| Matches any single character
+
+| `[abc]`
+| Matches any character in brackets
+
+| `[a-z]`
+| Matches any character in range
+
+| `{a,b}`
+| Matches either pattern
+
+| `\`
+| Escapes special characters
+|===
+
+=== Common Patterns
+
+==== File Extension Patterns
+
+[source,ruby]
+----
+# Single extension
+filter: '**/*.ttf'
+
+# Multiple extensions
+filter: '**/*.{ttf,otf,woff}'
+
+# Image files
+filter: '**/*.{png,jpg,jpeg,gif,svg}'
+
+# Source code
+filter: '**/*.{rb,js,py,java}'
+----
+
+==== Directory Patterns
+
+[source,ruby]
+----
+# Files in specific directory
+filter: 'src/**/*.rb'
+
+# Files in any 'config' directory
+filter: '**/config/**/*'
+
+# Files at root level only
+filter: '*'
+----
+
+==== Naming Patterns
+
+[source,ruby]
+----
+# Test files
+filter: '**/*_test.rb'
+filter: '**/test_*.rb'
+
+# Configuration files
+filter: '**/*.conf'
+filter: '**/*.yaml'
+filter: '**/*.json'
+
+# Hidden files
+filter: '**/.*'
+----
+
+=== Recursive vs Non-Recursive
+
+==== Recursive (`**`)
+
+[source,ruby]
+----
+# Matches in any subdirectory
+filter: '**/*.txt'
+# Matches: readme.txt, docs/readme.txt, docs/api/readme.txt
+----
+
+==== Non-Recursive (`*`)
+
+[source,ruby]
+----
+# Matches only in current directory
+filter: '*.txt'
+# Matches: readme.txt
+# Does NOT match: docs/readme.txt
+----
+
+=== Combining Patterns
+
+Use braces for multiple patterns:
+
+[source,ruby]
+----
+# Multiple file types
+filter: '**/*.{html,css,js}'
+
+# Multiple directories
+filter: '{src,lib,test}/**/*.rb'
+
+# Complex combinations
+filter: '**/{config,settings}*.{json,yaml}'
+----
+
+=== With Recursive Extraction
+
+Combine filters with recursive extraction:
+
+[source,ruby]
+----
+# Extract DLL files from MSI and nested CABs
+Excavate::Archive.new('installer.msi').extract(
+  filter: '**/*.dll',
+  recursive_packages: true
+)
+----
+
+=== Error Handling
+
+If no files match the pattern:
+
+[source,ruby]
+----
+begin
+  Excavate::Archive.new('fonts.zip').extract(filter: '*.pdf')
+rescue Excavate::TargetNotFoundError => e
+  puts "No match: #{e.message}"
+  # => "Filter `*.pdf` matched no file."
+end
+----
+
+=== CLI Usage
+
+Use filters from the command line:
+
+[source,bash]
+----
+# Extract all TrueType fonts
+excavate --filter "**/*.ttf" fonts.zip
+
+# Extract configuration files
+excavate --filter "etc/**/*.conf" backup.tar
+
+# Combine with recursive
+excavate -r --filter "**/*.dll" installer.msi
+----
+
+=== Return Value
+
+Filter extraction returns an array of extracted file paths:
+
+[source,ruby]
+----
+files = Excavate::Archive.new('archive.zip').extract(filter: '**/*.rb')
+# => ["/path/to/lib/main.rb", "/path/to/lib/utils.rb"]
+
+files.each do |file|
+  puts "Extracted: #{file}"
+end
+----
+
+=== Performance Considerations
+
+Filter extraction is efficient because:
+
+* Only matching files are extracted
+* Non-matching files are skipped during extraction
+* Less disk I/O and storage used
+
+[source,ruby]
+----
+# Instead of extracting all then filtering
+Excavate::Archive.new('large.zip').extract
+files = Dir.glob('large/**/*.rb')  # Wasteful
+
+# Filter during extraction
+files = Excavate::Archive.new('large.zip').extract(filter: '**/*.rb')  # Efficient
+----
+
+=== Examples
+
+==== Extract All Fonts from Installer
+
+[source,ruby]
+----
+fonts = Excavate::Archive.new('installer.msi').extract(
+  filter: '**/*.{ttf,otf}',
+  recursive_packages: true
+)
+
+puts "Extracted #{fonts.size} fonts"
+----
+
+==== Extract Web Assets
+
+[source,ruby]
+----
+assets = Excavate::Archive.new('project.zip').extract(
+  filter: '**/*.{html,css,js,png,jpg}'
+)
+----
+
+==== Extract Source Code
+
+[source,ruby]
+----
+sources = Excavate::Archive.new('project.tar.gz').extract(
+  filter: '{src,lib,app}/**/*.rb'
+)
+----
+
+=== Next Steps
+
+* Learn <<file-iteration,File Iteration>> for processing files during extraction
+* Explore <<../advanced-usage/recursive-extraction,Recursive Extraction>> for nested archives

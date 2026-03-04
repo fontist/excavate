@@ -1,0 +1,152 @@
+---
+title: Omnizip Suite
+parent: Resources
+nav_order: 7
+---
+
+== Omnizip Suite
+
+=== Purpose
+
+Overview of the Omnizip suite and how Excavate integrates with other projects.
+
+=== Suite Overview
+
+Excavate is part of the Omnizip family of pure Ruby compression libraries:
+
+[cols="1,3"]
+|===
+| Project | Purpose
+
+| Omnizip
+| Comprehensive compression library
+
+| Cabriolet
+| Microsoft compression formats
+
+| Excavate
+| Unified extraction interface
+|===
+
+=== Omnizip
+
+https://github.com/omnizip/omnizip[Omnizip] is a comprehensive compression
+library supporting multiple formats.
+
+==== Supported Formats
+
+* 7z - 7-Zip format
+* ZIP - Standard ZIP format
+* RAR4/5 - RAR archives
+* TAR - Unix tape archive
+* ISO - ISO disk images
+* XAR - eXtensible ARchive
+* RPM - Red Hat packages
+* OLE - OLE compound documents
+* XZ - LZMA compression
+* GZIP - GNU ZIP
+* BZIP2 - Bzip2 compression
+* CPIO - Copy In/Out
+* PAR2 - Parity archives
+
+==== Features
+
+* Encryption support
+* Multi-volume archives
+* Pure Ruby implementation
+
+=== Cabriolet
+
+https://github.com/omnizip/cabriolet[Cabriolet] specializes in Microsoft
+compression formats.
+
+==== Supported Formats
+
+* CAB - Microsoft Cabinet
+* CHM - Compiled HTML Help
+* SZDD - Single-file compression
+* KWAJ - KWAJ compression
+* HLP - Windows Help files
+* LIT - Microsoft Reader eBooks
+* OAB - Offline Address Book
+
+==== Features
+
+* Full bidirectional support (read/write)
+* Multiple compression algorithms
+* Salvage mode for damaged archives
+
+=== Excavate
+
+Excavate builds on Omnizip and Cabriolet to provide:
+
+* Unified extraction interface
+* Recursive extraction
+* Format-agnostic API
+* CLI tool
+
+=== How They Work Together
+
+[source]
+----
+┌─────────────────────────────────────────────────────┐
+│                    Excavate                         │
+│            (Unified Extraction API)                 │
+└───────────────────────┬─────────────────────────────┘
+                        │
+          ┌─────────────┴─────────────┐
+          │                           │
+          ▼                           ▼
+┌─────────────────────┐     ┌─────────────────────┐
+│      Omnizip        │     │     Cabriolet       │
+│ (ZIP, 7z, TAR, etc) │     │ (CAB, CHM, etc)     │
+└─────────────────────┘     └─────────────────────┘
+----
+
+=== Using Multiple Libraries
+
+You can use Excavate alongside Omnizip or Cabriolet:
+
+[source,ruby]
+----
+require 'excavate'
+require 'omnizip'
+
+# Use Excavate for extraction
+Excavate::Archive.new('archive.zip').extract
+
+# Use Omnizip directly for other operations
+Omnizip::Zip.compress('output.zip', files)
+----
+
+=== Shared Characteristics
+
+All Omnizip suite libraries:
+
+* **Pure Ruby** - No native dependencies
+* **Cross-platform** - Linux, macOS, Windows
+* **Well-tested** - Comprehensive test suites
+* **Documented** - Full API documentation
+
+=== When to Use Which
+
+.Use Excavate when:
+* You need to extract archives
+* Format varies or is unknown
+* Recursive extraction is needed
+
+.Use Omnizip when:
+* You need compression (creation)
+* Working with specific formats
+* Need advanced features
+
+.Use Cabriolet when:
+* Working with Microsoft formats
+* Need CAB creation
+* Handling damaged archives
+
+=== See Also
+
+* https://github.com/omnizip/omnizip[Omnizip on GitHub]
+* https://github.com/omnizip/cabriolet[Cabriolet on GitHub]
+* https://omnizip.github.io[Omnizip Website]

@@ -1,0 +1,287 @@
+---
+title: Home
+nav_order: 0
+---
+
+image:https://img.shields.io/gem/v/excavate.svg[RubyGems Version, link=https://rubygems.org/gems/excavate]
+image:https://img.shields.io/github/license/omnizip/excavate.svg[License]
+image:https://github.com/omnizip/excavate/workflows/rake/badge.svg[Build Status, link=https://github.com/omnizip/excavate/actions]
+
+== Excavate
+
+**Recursive Archive Extraction**
+
+Excavate provides a unified interface for extracting nested archives across
+multiple compression and archive formats.
+
+It allows for the extraction of a particular file from a deeply nested archives
+potentially spanning multiple formats (e.g., extracting a file from a CAB inside
+an MSI installer) with a single command, handling all the complexities of
+different formats and platform-specific issues under the hood.
+
+Excavate is a pure Ruby gem with no native dependencies:
+
+* No compilation required
+* Works on MRI, JRuby, and TruffleRuby
+* Cross-platform: Linux, macOS, Windows, BSD
+* Easy deployment with no system dependencies
+
+
+**Part of the Omnizip Suite** -- https://omnizip.github.io[Pure Ruby compression libraries]
+
+Built on https://github.com/omnizip/omnizip[Omnizip] and
+https://github.com/omnizip/cabriolet[Cabriolet], it enables recursive extraction
+of archives within archives with a single command.
+
+NOTE: Omnizip and Cabriolet are libraries that handle the core extraction logic
+and are used for extracting single layers of archives. Excavate provides the
+high-level interface that orchestrates recursive extraction across multiple
+formats, leveraging Omnizip and Cabriolet under the hood.
+
+
+== Documentation Map
+
+=== New to Excavate?
+
+Follow this learning path:
+
+. xref:getting-started/installation.adoc[Install Excavate]
+. xref:getting-started/quick-start.adoc[Quick Start Guide] (5 minutes)
+. xref:getting-started/basic-usage.adoc[Basic Usage]
+. xref:getting-started/common-workflows.adoc[Common Workflows]
+
+=== Looking for Something Specific?
+
+**Working with Files**
+
+* xref:guides/basic-usage/extracting-files.adoc[Extract files from archives]
+* xref:guides/basic-usage/selective-extraction.adoc[Extract specific files]
+* xref:guides/basic-usage/filter-patterns.adoc[Filter by pattern]
+* xref:guides/basic-usage/file-iteration.adoc[Process files during extraction]
+
+**File Formats**
+
+* xref:guides/formats/cab-format.adoc[CAB format]
+* xref:guides/formats/msi-format.adoc[MSI format]
+* xref:guides/formats/rpm-format.adoc[RPM format]
+* xref:guides/formats/sevenzip-format.adoc[7-Zip format]
+* xref:guides/formats/tar-format.adoc[TAR format]
+* xref:guides/formats/xar-pkg-format.adoc[XAR/PKG format]
+* xref:guides/formats/format-comparison.adoc[Format comparison]
+
+**Advanced Topics**
+
+* xref:guides/advanced-usage/recursive-extraction.adoc[Recursive extraction]
+* xref:guides/advanced-usage/error-handling.adoc[Error handling]
+* xref:guides/advanced-usage/performance-tuning.adoc[Performance tuning]
+
+**Reference Materials**
+
+* xref:resources/quick-reference.adoc[Quick reference cheat sheet]
+* xref:reference/cli.adoc[CLI documentation]
+* xref:reference/api.adoc[Ruby API documentation]
+* xref:reference/error-classes.adoc[Error classes]
+
+**Examples**
+
+* xref:examples/extract-msi-installer.adoc[Extract MSI installer]
+* xref:examples/batch-font-extraction.adoc[Batch font extraction]
+* xref:examples/filter-by-pattern.adoc[Filter by pattern]
+* xref:examples/rails-upload-handler.adoc[Rails upload handler]
+
+**For Developers**
+
+* xref:developer/contributing.adoc[How to contribute]
+* xref:developer/architecture/index.adoc[Architecture]
+* xref:developer/testing.adoc[Running and writing tests]
+
+**Help & Resources**
+
+* xref:resources/faq.adoc[FAQ]
+* xref:resources/glossary.adoc[Glossary]
+* xref:resources/compatibility.adoc[Compatibility matrix]
+* xref:resources/omnizip-suite.adoc[Omnizip Suite]
+
+**Troubleshooting**
+
+* xref:troubleshooting/common-errors.adoc[Common errors]
+* xref:troubleshooting/corrupted-files.adoc[Corrupted files]
+* xref:troubleshooting/platform-specific.adoc[Platform-specific issues]
+* xref:troubleshooting/performance-issues.adoc[Performance issues]
+
+== Why Excavate?
+
+- **Recursive Extraction**: Extract archives within archives automatically (e.g., MSI → CAB → files)
+- **Unified API**: One consistent interface for 10+ archive formats
+- **Pure Ruby**: No native dependencies, works everywhere Ruby runs
+- **Selective Extraction**: Extract specific files or filter by pattern
+- **CLI Included**: Command-line tool for quick extraction tasks
+- **Cross-Platform**: Handles Windows file locking, works on all platforms
+
+== Quick Start
+
+=== Installation
+
+[source,ruby]
+----
+gem install excavate
+----
+
+Or add to your Gemfile:
+
+[source,ruby]
+----
+gem "excavate"
+----
+
+=== Basic Usage
+
+[source,ruby]
+----
+require "excavate"
+
+# Extract an archive
+Excavate::Archive.new("package.zip").extract
+
+# Extract recursively (nested archives)
+Excavate::Archive.new("installer.msi").extract(recursive_packages: true)
+
+# Extract specific files
+Excavate::Archive.new("data.tar.gz").extract(files: ["config/settings.json"])
+
+# Filter by pattern
+Excavate::Archive.new("fonts.zip").extract(filter: "**/*.ttf")
+----
+
+== Supported Formats
+
+Excavate supports extraction from the following formats:
+
+[cols="1,1,2,3"]
+|===
+| Format | Extension(s) | Extractor | Notes
+
+| 7-Zip
+| `.7z`, `.exe`
+| SevenZipExtractor
+| Self-extracting archives, BCJ2 filter
+
+| CAB
+| `.cab`, `.exe`
+| CabExtractor
+| Self-extracting CAB, salvage mode
+
+| CPIO
+| `.cpio`
+| CpioExtractor
+| Old and new formats
+
+| GZIP
+| `.gz`, `.tar.gz`
+| GzipExtractor
+| Uses Ruby stdlib Zlib
+
+| MSI
+| `.msi`
+| OleExtractor
+| OLE compound document
+
+| RPM
+| `.rpm`
+| RpmExtractor
+| Extracts compressed payload
+
+| TAR
+| `.tar`
+| TarExtractor
+| Standard TAR format
+
+| XAR
+| `.pkg`, `.xar`
+| XarExtractor
+| macOS installer packages
+
+| XZ
+| `.xz`, `.tar.xz`, `.txz`
+| XzExtractor
+| Compound TAR+XZ support
+
+| ZIP
+| `.zip`
+| ZipExtractor
+| Standard ZIP format
+|===
+
+All formats support recursive extraction for nested archives.
+
+== Architecture
+
+Excavate follows a clean object-oriented architecture:
+
+[source]
+----
+┌─────────────────────────────────────────────────────────────┐
+│                     Excavate::Archive                       │
+│           (Facade providing unified interface)              │
+└───────────────────────────┬─────────────────────────────────┘
+                            │
+                            │ delegates to
+                            │
+    ┌───────────────────────┴───────────────────────┐
+    │           Format Type Registry                │
+    │           (TYPES hash mapping)                │
+    └───────────────────────┬───────────────────────┘
+                            │
+                            │ instantiates
+                            │
+    ┌───────────────────────┴───────────────────────┐
+    │           Extractors::Extractor               │
+    │           (Abstract base class)               │
+    └───────────────────────┬───────────────────────┘
+                            │
+                            │ specialized by
+                            │
+    ┌───────┬───────┬───────┼───────┬───────┬───────┐
+    │       │       │       │       │       │       │
+   Cab    Cpio    Gzip    Xar     Zip    SevenZip  ...
+    │       │       │       │       │       │
+    └───────┴───────┴───────┴───────┴───────┴───────┘
+              Powered by Omnizip & Cabriolet
+----
+
+=== Design Principles
+
+Single Responsibility:: Each extractor handles one format
+Open/Closed:: New formats can be added without modifying existing code
+Dependency Inversion:: Archive class depends on Extractor abstraction
+
+== Part of the Omnizip Suite
+
+Excavate is part of the Omnizip family of pure Ruby compression libraries:
+
+Omnizip::
+Comprehensive compression library supporting 7z, ZIP, RAR4/5, TAR, ISO, XAR,
+RPM, OLE, XZ, GZIP, BZIP2, CPIO, and PAR2 formats with encryption and
+multi-volume support.
+
+Cabriolet::
+Specialized library for Microsoft compression formats including CAB, CHM,
+SZDD, KWAJ, HLP, LIT, and OAB with full bidirectional support.
+
+Excavate::
+Unified extraction interface built on Omnizip and Cabriolet, providing
+recursive extraction of nested archives.
+
+== Platform Support
+
+Excavate is a pure Ruby gem with no compiled dependencies:
+
+* **Ruby Implementations**: MRI 2.7+, JRuby, TruffleRuby
+* **Operating Systems**: Linux, macOS, Windows, BSD
+* **Special Handling**: Windows file locking handled with automatic retries
+
+== Links
+
+* https://github.com/omnizip/excavate[GitHub Repository]
+* https://rubygems.org/gems/excavate[RubyGems]
+* https://omnizip.github.io[Omnizip Website]

@@ -1,0 +1,153 @@
+---
+title: Design Principles
+parent: Architecture
+grand_parent: Developer Documentation
+nav_order: 1
+---
+
+== Design Principles
+
+=== Purpose
+
+The object-oriented design principles that guide Excavate's architecture.
+
+=== Core Principles
+
+==== Single Responsibility Principle
+
+Each class has one clear responsibility:
+
+* `Archive` - Coordinates extraction process
+* `Extractor` - Base class for format-specific extraction
+* `CabExtractor` - Extracts only CAB files
+* `FileMagic` - Detects file format
+
+==== Open/Closed Principle
+
+The system is open for extension but closed for modification:
+
+* Add new formats by creating new extractors
+* No need to modify existing code
+* Registry pattern allows dynamic registration
+
+==== Dependency Inversion Principle
+
+High-level modules depend on abstractions:
+
+[source,ruby]
+----
+# Archive depends on Extractor abstraction
+class Archive
+  def extract(target)
+    extractor = extractor_class.new(@archive)
+    extractor.extract(target)
+  end
+end
+
+# Not on concrete implementations
+# This would be wrong:
+class Archive
+  def extract(target)
+    if extension == 'cab'
+      CabExtractor.new(@archive).extract(target)
+    elsif extension == 'zip'
+      ZipExtractor.new(@archive).extract(target)
+    # ... violates OCP
+    end
+  end
+end
+----
+
+=== MECE Principle
+
+Code is Mutually Exclusive, Collectively Exhaustive:
+
+* Each extractor handles one format exclusively
+* All supported formats have an extractor
+* No overlap in responsibilities
+
+=== Separation of Concerns
+
+Different concerns are separated into different classes:
+
+* Format detection → `FileMagic`
+* Extraction coordination → `Archive`
+* Format-specific extraction → `*Extractor`
+* CLI handling → `CLI` classes
+* Error handling → Error classes
+
+=== Registry Pattern
+
+Format registration uses a hash mapping:
+
+[source,ruby]
+----
+TYPES = {
+  "cab"  => Extractors::CabExtractor,
+  "zip"  => Extractors::ZipExtractor,
+  # ... more mappings
+}
+----
+
+Benefits:
+
+* Easy to add new formats
+* No conditional logic for format selection
+* Centralized configuration
+
+=== Facade Pattern
+
+`Excavate::Archive` provides a simple interface to complex subsystems:
+
+[source,ruby]
+----
+# Simple interface
+Excavate::Archive.new('file.zip').extract
+
+# Internally handles:
+# - Format detection
+# - Extractor selection
+# - Target directory creation
+# - Error handling
+# - Recursive extraction
+----
+
+=== Strategy Pattern
+
+Each extractor implements the same interface:
+
+[source,ruby]
+----
+class Extractor
+  def initialize(archive)
+    @archive = archive
+  end
+
+  def extract(target)
+    raise NotImplementedError
+  end
+end
+----
+
+Different strategies for different formats, same interface.
+
+=== Composition over Inheritance
+
+Extractors use composition for shared behavior:
+
+[source,ruby]
+----
+class GzipExtractor < Extractor
+  def extract(target)
+    # Uses Ruby's Zlib (composition)
+    Zlib::GzipReader.open(@archive) do |gz|
+      # ...
+    end
+  end
+end
+----
+
+=== See Also
+
+* <<extractor-pattern,Extractor Pattern>>
+* <<extending,Extending Excavate>>

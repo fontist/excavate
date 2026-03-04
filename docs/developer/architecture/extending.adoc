@@ -1,0 +1,194 @@
+---
+title: Extending Excavate
+parent: Architecture
+grand_parent: Developer Documentation
+nav_order: 4
+---
+
+== Extending Excavate
+
+=== Purpose
+
+How to add support for new archive formats.
+
+=== Overview
+
+Adding a new format requires:
+
+. Creating an extractor class
+. Registering the extension
+. Adding tests
+
+=== Step 1: Create Extractor Class
+
+Create a new file in `lib/excavate/extractors/`:
+
+[source,ruby]
+----
+# lib/excavate/extractors/rar_extractor.rb
+
+module Excavate
+  module Extractors
+    class RarExtractor < Extractor
+      def extract(target)
+        # Validate archive
+        validate_archive!
+
+        # Extract using appropriate library
+        extract_rar(target)
+
+        # Return target path
+        target
+      end
+
+      private
+
+      def validate_archive!
+        # Check if file is valid RAR
+        # Raise UnknownArchiveError if not
+      end
+
+      def extract_rar(target)
+        # Implementation using library
+        # Ensure target directory is created
+        # Extract all files
+      end
+    end
+  end
+end
+----
+
+=== Step 2: Register Extension
+
+Add to the TYPES hash in `lib/excavate/archive.rb`:
+
+[source,ruby]
+----
+TYPES = {
+  # ... existing mappings
+  "rar" => Extractors::RarExtractor
+}
+----
+
+=== Step 3: Add Tests
+
+Create test file in `spec/extractors/`:
+
+[source,ruby]
+----
+# spec/extractors/rar_extractor_spec.rb
+
+RSpec.describe Excavate::Extractors::RarExtractor do
+  let(:archive) { 'spec/fixtures/test.rar' }
+  let(:target) { Dir.mktmpdir }
+
+  describe '#extract' do
+    it 'extracts RAR archive' do
+      extractor = described_class.new(archive)
+      extractor.extract(target)
+
+      expect(Dir.glob("#{target}/*")).not_to be_empty
+    end
+
+    it 'raises error for invalid RAR' do
+      extractor = described_class.new('invalid.rar')
+
+      expect { extractor.extract(target) }
+        .to raise_error(Excavate::UnknownArchiveError)
+    end
+  end
+end
+----
+
+=== Step 4: Add Fixtures
+
+Add test archives to `spec/fixtures/`:
+
+[source]
+----
+spec/fixtures/
+├── test.rar          # Basic RAR archive
+├── test_nested.rar   # RAR with nested content
+└── test_corrupt.rar  # Corrupted RAR for error testing
+----
+
+=== Implementation Guidelines
+
+==== Error Handling
+
+Raise appropriate errors:
+
+[source,ruby]
+----
+def extract(target)
+  raise UnknownArchiveError, "Not a valid RAR file" unless valid?
+  raise TargetExistsError, target if File.exist?(target)
+
+  # Extraction logic
+end
+----
+
+==== Directory Creation
+
+Ensure target directory exists:
+
+[source,ruby]
+----
+def extract(target)
+  FileUtils.mkdir_p(target)
+
+  # Extraction logic
+end
+----
+
+==== Return Value
+
+Return the target path:
+
+[source,ruby]
+----
+def extract(target)
+  # Extraction logic
+
+  target  # Return target path
+end
+----
+
+=== Compound Format Support
+
+For formats that may contain other archives:
+
+[source,ruby]
+----
+class RarExtractor < Extractor
+  def extract(target)
+    # Extract RAR
+    extract_contents(target)
+
+    # Handle nested archives if recursive_packages
+    if @options[:recursive_packages]
+      extract_nested(target)
+    end
+  end
+
+  private
+
+  def extract_nested(target)
+    Dir.glob("#{target}/**/*").each do |file|
+      next unless File.file?(file)
+      next unless archive?(file)
+
+      # Recursively extract
+      Archive.new(file).extract(
+        File.dirname(file),
+        recursive_packages: true
+      )
+    end
+  end
+end
+----
+
+=== See Also
+
+* <<extractor-pattern,Extractor Pattern>>
+* <<design-principles,Design Principles>>

@@ -1,0 +1,154 @@
+---
+title: Format Detection
+parent: Architecture
+grand_parent: Developer Documentation
+nav_order: 3
+---
+
+== Format Detection
+
+=== Purpose
+
+Understanding how Excavate detects archive formats.
+
+=== Overview
+
+Excavate primarily uses file extension for format detection, with limited
+magic byte verification for some formats.
+
+=== Extension-Based Detection
+
+The primary detection mechanism:
+
+[source,ruby]
+----
+def extract_extension
+  path = @archive.to_s
+
+  # Handle compound extensions
+  if path.end_with?('.tar.gz')
+    'tar.gz'
+  elsif path.end_with?('.tar.xz')
+    'tar.xz'
+  else
+    File.extname(path).sub(/^\./, '')
+  end
+end
+----
+
+=== Extension Mapping
+
+Extensions map to extractors via the TYPES hash:
+
+[source,ruby]
+----
+TYPES = {
+  "cab"  => Extractors::CabExtractor,
+  "cpio" => Extractors::CpioExtractor,
+  "exe"  => Extractors::SevenZipExtractor,
+  "gz"   => Extractors::GzipExtractor,
+  "msi"  => Extractors::OleExtractor,
+  "pkg"  => Extractors::XarExtractor,
+  "rpm"  => Extractors::RpmExtractor,
+  "tar"  => Extractors::TarExtractor,
+  "xz"   => Extractors::XzExtractor,
+  "zip"  => Extractors::ZipExtractor
+}
+----
+
+=== Magic Byte Detection
+
+Limited content-based detection via `FileMagic`:
+
+[source,ruby]
+----
+class FileMagic
+  SIGNATURES = {
+    "\x1F\x8B"       => :gzip,
+    "MSCF\x00\x00\x00\x00" => :cab,
+    "\xFD7zXZ\x00"   => :xz
+  }
+
+  def self.detect(path)
+    File.open(path, 'rb') do |f|
+      header = f.read(8)
+      SIGNATURES.each do |sig, type|
+        return type if header.start_with?(sig)
+      end
+    end
+    nil
+  end
+end
+----
+
+=== GZIP Verification
+
+GZIP extraction verifies magic bytes:
+
+[source,ruby]
+----
+class GzipExtractor < Extractor
+  def extract(target)
+    # Verify GZIP signature
+    unless gzip_file?
+      raise UnknownArchiveError,
+            "Not a valid GZIP file"
+    end
+
+    # Proceed with extraction
+    # ...
+  end
+
+  private
+
+  def gzip_file?
+    FileMagic.detect(@archive) == :gzip
+  end
+end
+----
+
+=== EXE Detection
+
+EXE files use a fallback strategy:
+
+[source,ruby]
+----
+def extract_exe(target)
+  # Try 7-Zip first
+  begin
+    SevenZipExtractor.new(@archive).extract(target)
+    return
+  rescue
+    # Not 7-Zip
+  end
+
+  # Try CAB
+  begin
+    CabExtractor.new(@archive).extract(target)
+  rescue
+    raise UnknownArchiveError,
+          "Could not extract EXE file"
+  end
+end
+----
+
+=== Limitations
+
+Extension-based detection has limitations:
+
+* Renamed files may fail
+* No comprehensive content detection
+* Compound formats require specific extensions
+
+=== Future Improvements
+
+Potential enhancements:
+
+* More magic byte signatures
+* Content-based detection fallback
+* Format-specific validation
+
+=== See Also
+
+* <<extractor-pattern,Extractor Pattern>>
+* xref:../../reference/formats/extension-mapping.adoc[Extension Mapping]

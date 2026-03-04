@@ -1,0 +1,169 @@
+---
+title: Migration
+parent: Resources
+nav_order: 6
+---
+
+== Migration
+
+=== Purpose
+
+Guide for migrating from other archive tools to Excavate.
+
+=== From Rubyzip
+
+==== Basic Extraction
+
+.Rubyzip
+[source,ruby]
+----
+require 'zip'
+
+Zip::File.open('archive.zip') do |zip_file|
+  zip_file.each do |entry|
+    entry.extract(entry.name)
+  end
+end
+----
+
+.Excavate
+[source,ruby]
+----
+require 'excavate'
+
+Excavate::Archive.new('archive.zip').extract
+----
+
+==== Extract Specific Files
+
+.Rubyzip
+[source,ruby]
+----
+Zip::File.open('archive.zip') do |zip_file|
+  entry = zip_file.find_entry('config.json')
+  entry&.extract('config.json')
+end
+----
+
+.Excavate
+[source,ruby]
+----
+Excavate::Archive.new('archive.zip').extract(files: ['config.json'])
+----
+
+=== From ruby-archive
+
+==== Basic Extraction
+
+.ruby-archive
+[source,ruby]
+----
+Archive.read.open('archive.zip') do |archive|
+  archive.each do |entry|
+    # Manual extraction
+  end
+end
+----
+
+.Excavate
+[source,ruby]
+----
+Excavate::Archive.new('archive.zip').extract
+----
+
+=== From System Tools
+
+==== Using unzip
+
+.unzip (shell)
+[source,bash]
+----
+unzip archive.zip -d output/
+----
+
+.Excavate
+[source,ruby]
+----
+Excavate::Archive.new('archive.zip').extract('output')
+----
+
+==== Using tar
+
+.tar (shell)
+[source,bash]
+----
+tar -xzf archive.tar.gz -C output/
+----
+
+.Excavate
+[source,ruby]
+----
+Excavate::Archive.new('archive.tar.gz').extract('output')
+----
+
+==== Using 7z
+
+.7z (shell)
+[source,bash]
+----
+7z x archive.7z -ooutput/
+----
+
+.Excavate
+[source,ruby]
+----
+Excavate::Archive.new('archive.7z').extract('output')
+----
+
+=== Advantages of Excavate
+
+==== Unified Interface
+
+One API for all formats:
+
+[source,ruby]
+----
+# Same code works for all formats
+Excavate::Archive.new('file.zip').extract
+Excavate::Archive.new('file.tar.gz').extract
+Excavate::Archive.new('file.msi').extract
+----
+
+==== Recursive Extraction
+
+Handle nested archives automatically:
+
+[source,ruby]
+----
+# MSI → CAB → Files
+Excavate::Archive.new('installer.msi').extract(recursive_packages: true)
+----
+
+==== No System Dependencies
+
+Works without native tools:
+
+* No unzip, tar, or 7z required
+* Consistent behavior across platforms
+* Easy deployment
+
+=== When to Keep Native Tools
+
+Consider keeping native tools when:
+
+* Maximum performance required
+* Very large archives (>1GB)
+* Advanced features needed (encryption, multi-volume)
+
+=== Migration Checklist
+
+. Identify archive formats in use
+. Replace format-specific code with Excavate
+. Test extraction results
+. Update error handling
+. Remove native tool dependencies
+
+=== See Also
+
+* xref:../getting-started/basic-usage.adoc[Basic Usage]
+* xref:../resources/quick-reference.adoc[Quick Reference]

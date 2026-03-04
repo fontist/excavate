@@ -1,0 +1,156 @@
+---
+title: CAB Format
+parent: Archive Formats
+grand_parent: Guides
+nav_order: 1
+---
+
+== CAB Format
+
+=== Purpose
+
+This guide covers working with Microsoft Cabinet (CAB) files using Excavate.
+
+=== References
+
+* https://docs.microsoft.com/en-us/previous-versions/bb417343(v=msdn.10)[Microsoft Cabinet SDK]
+
+=== Concepts
+
+CAB (Cabinet) is a Microsoft archive format commonly used for software
+distribution and Windows system files. CAB files support multiple compression
+algorithms and can span multiple files.
+
+=== Basic Usage
+
+==== Extract CAB File
+
+[source,ruby]
+----
+Excavate::Archive.new('archive.cab').extract
+----
+
+==== Extract Self-Extracting CAB
+
+Some `.exe` files are self-extracting CAB archives:
+
+[source,ruby]
+----
+# Excavate tries CAB after 7-Zip for .exe files
+Excavate::Archive.new('installer.exe').extract
+----
+
+=== CAB Characteristics
+
+[cols="1,2"]
+|===
+| Characteristic | Description
+
+| File extension
+| `.cab`
+
+| Magic bytes
+| `MSCF`
+
+| Max file size
+| 2 GB
+
+| Compression
+| None, LZSS, MSZIP, LZX, Quantum
+
+| Multi-part
+| Yes (spanned cabinets)
+
+| Platform
+| Windows (primary)
+|===
+
+=== Compression Algorithms
+
+CAB files support multiple compression methods:
+
+* **None** - Uncompressed storage
+* **LZSS** - Simple dictionary compression
+* **MSZIP** - Deflate-based (ZIP-compatible)
+* **LZX** - High compression ratio
+* **Quantum** - Memory-efficient compression
+
+Excavate handles all compression types automatically.
+
+=== Embedded CABs
+
+CAB files are often embedded in other containers:
+
+==== CAB in MSI
+
+[source,ruby]
+----
+# Extract MSI and embedded CABs
+Excavate::Archive.new('installer.msi').extract(recursive_packages: true)
+----
+
+==== CAB in EXE
+
+[source,ruby]
+----
+# Self-extracting CAB executables
+Excavate::Archive.new('sfx.exe').extract
+----
+
+=== Salvage Mode
+
+Excavate uses Cabriolet's salvage mode for corrupted CAB files:
+
+[source,ruby]
+----
+# Cabriolet handles checksum errors gracefully
+# Damaged files are extracted with warnings
+Excavate::Archive.new('damaged.cab').extract
+----
+
+=== CLI Usage
+
+[source,bash]
+----
+# Extract CAB file
+excavate archive.cab
+
+# Extract recursively
+excavate -r installer.cab
+----
+
+=== Common Use Cases
+
+==== Extract Windows System Files
+
+[source,ruby]
+----
+# Extract compressed system files from CAB
+Excavate::Archive.new('windows.cab').extract(
+  filter: '**/*.dll'
+)
+----
+
+==== Extract Font Files
+
+[source,ruby]
+----
+# Fonts are often distributed in CAB format
+Excavate::Archive.new('fonts.cab').extract(
+  filter: '**/*.{ttf,otf}'
+)
+----
+
+=== Technical Details
+
+Excavate uses the Cabriolet gem for CAB extraction:
+
+* Salvage mode enabled for error tolerance
+* Self-extracting archive support
+* Multi-part cabinet handling
+* All compression algorithms supported
+
+=== Related Topics
+
+* <<msi-format,MSI Format>> - CAB files in Windows Installers
+* xref:../../reference/api.adoc[API Reference]

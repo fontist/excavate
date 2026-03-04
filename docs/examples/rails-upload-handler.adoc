@@ -1,0 +1,199 @@
+---
+title: Rails Upload Handler
+parent: Examples
+nav_order: 4
+---
+
+== Rails Upload Handler
+
+=== Purpose
+
+Handle uploaded archives in a Rails application.
+
+=== Problem
+
+You need to process uploaded archive files in a Rails controller, extracting
+and processing their contents.
+
+=== Solution
+
+Use Excavate with proper error handling and temporary directory management:
+
+[source,ruby]
+----
+# app/services/archive_processor.rb
+require 'excavate'
+
+class ArchiveProcessor
+  def initialize(uploaded_file)
+    @uploaded_file = uploaded_file
+  end
+
+  def process
+    target = Dir.mktmpdir('archive-')
+
+    begin
+      archive = Excavate::Archive.new(@uploaded_file)
+      archive.extract(target, recursive_packages: true)
+
+      results = process_extracted_files(target)
+      { success: true, results: results }
+    rescue Excavate::TargetExistsError => e
+      { success: false, error: 'Target already exists', message: e.message }
+    rescue Excavate::TargetNotEmptyError => e
+      { success: false, error: 'Target not empty', message: e.message }
+    rescue Excavate::UnknownArchiveError => e
+      { success: false, error: 'Unknown archive format', message: e.message }
+    rescue Excavate::Error => e
+      { success: false, error: 'Extraction failed', message: e.message }
+    ensure
+      FileUtils.rm_rf(target)
+    end
+  end
+
+  private
+
+  def process_extracted_files(directory)
+    files = Dir.glob("#{directory}/**/*").select { |f| File.file?(f) }
+
+    files.map do |file|
+      {
+        path: file.sub("#{directory}/", ''),
+        size: File.size(file),
+        type: File.extname(file)
+      }
+    end
+  end
+end
+----
+
+=== Controller Example
+
+[source,ruby]
+----
+# app/controllers/archives_controller.rb
+class ArchivesController < ApplicationController
+  def new
+  end
+
+  def create
+    unless valid_archive?(params[:file])
+      redirect_to new_archive_path, alert: 'Invalid archive format'
+      return
+    end
+
+    processor = ArchiveProcessor.new(params[:file])
+    result = processor.process
+
+    if result[:success]
+      redirect_to archives_path,
+                  notice: "Processed #{result[:results].size} files"
+    else
+      redirect_to new_archive_path, alert: result[:message]
+    end
+  end
+
+  private
+
+  def valid_archive?(file)
+    return false unless file.respond_to?(:original_filename)
+
+    ext = File.extname(file.original_filename).downcase
+    %w[.zip .tar .tar.gz .tgz .tar.xz .txz .msi .rpm .pkg .7z].any? do |valid|
+      ext.end_with?(valid)
+    end
+  end
+end
+----
+
+=== With File Storage
+
+[source,ruby]
+----
+# app/services/archive_importer.rb
+require 'excavate'
+
+class ArchiveImporter
+  def initialize(uploaded_file, user)
+    @uploaded_file = uploaded_file
+    @user = user
+  end
+
+  def import
+    target = Dir.mktmpdir('import-')
+    imported_files = []
+
+    begin
+      archive = Excavate::Archive.new(@uploaded_file)
+      archive.extract(target, recursive_packages: true)
+
+      # Import files to ActiveStorage
+      Dir.glob("#{target}/**/*").each do |file|
+        next unless File.file?(file)
+
+        relative_path = file.sub("#{target}/", '')
+
+        imported_file = @user.imported_files.create!(
+          filename: File.basename(file),
+          path: relative_path,
+          size: File.size(file),
+          file: File.open(file)
+        )
+
+        imported_files << imported_file
+      end
+
+      { success: true, files: imported_files }
+    rescue StandardError => e
+      { success: false, error: e.message }
+    ensure
+      FileUtils.rm_rf(target)
+    end
+  end
+end
+----
+
+=== Background Job
+
+[source,ruby]
+----
+# app/jobs/archive_processing_job.rb
+class ArchiveProcessingJob < ApplicationJob
+  queue_as :default
+
+  def perform(uploaded_file_path, user_id)
+    user = User.find(user_id)
+
+    target = Dir.mktmpdir('archive-job-')
+
+    begin
+      archive = Excavate::Archive.new(uploaded_file_path)
+      archive.extract(target, recursive_packages: true)
+
+      process_files(target, user)
+
+    ensure
+      FileUtils.rm_rf(target)
+      File.delete(uploaded_file_path) if File.exist?(uploaded_file_path)
+    end
+  end
+
+  private
+
+  def process_files(directory, user)
+    Dir.glob("#{directory}/**/*").each do |file|
+      next unless File.file?(file)
+
+      # Process each file
+      ImportFileService.new(file, user).call
+    end
+  end
+end
+----
+
+=== Notes
+
+* Always clean up temporary directories
+* Handle file size limits in Rails configuration
+* Consider using background jobs for large archives
+* Validate file types before processing

@@ -1,0 +1,39 @@
+---
+title: Reference
+nav_order: 5
+has_children: true
+---
+
+== Reference
+
+=== Purpose
+
+Complete technical reference for Excavate CLI and API.
+
+=== Topics
+
+[cols="1,4"]
+|===
+| Reference | Description
+
+| <<api.adoc,API Reference>>
+| Ruby API documentation
+
+| <<cli.adoc,CLI Reference>>
+| Command-line interface
+
+| <<formats/index,Format Reference>>
+| Supported format details
+
+| <<error-classes,Error Classes>>
+| All error classes
+|===
+
+=== Quick Links
+
+* xref:api.adoc[API Reference]
+* xref:cli.adoc[CLI Reference]
+
+=== Next Steps
+
+Browse the reference sections for detailed technical documentation.

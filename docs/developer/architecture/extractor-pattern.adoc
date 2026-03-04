@@ -1,0 +1,165 @@
+---
+title: Extractor Pattern
+parent: Architecture
+grand_parent: Developer Documentation
+nav_order: 2
+---
+
+== Extractor Pattern
+
+=== Purpose
+
+Understanding the extractor pattern used for format-specific extraction.
+
+=== Overview
+
+The extractor pattern uses a base class with a common interface, with
+specialized subclasses for each archive format.
+
+=== Base Class
+
+All extractors inherit from `Extractors::Extractor`:
+
+[source,ruby]
+----
+module Extractors
+  class Extractor
+    def initialize(archive)
+      @archive = archive
+    end
+
+    def extract(target)
+      raise NotImplementedError,
+            "Subclasses must implement #extract"
+    end
+  end
+end
+----
+
+=== Interface Contract
+
+Every extractor must implement:
+
+. `initialize(archive)` - Accept archive path
+. `extract(target)` - Extract to target directory
+
+=== Example Implementation
+
+[source,ruby]
+----
+module Extractors
+  class ZipExtractor < Extractor
+    def extract(target)
+      # Use Omnizip for extraction
+      Omnizip::Zip.extract(@archive, target)
+    rescue Omnizip::Error => e
+      raise ExtractionError, e.message
+    end
+  end
+end
+----
+
+=== Registry
+
+Extractors are registered by extension:
+
+[source,ruby]
+----
+TYPES = {
+  "zip" => Extractors::ZipExtractor,
+  "cab" => Extractors::CabExtractor,
+  "tar" => Extractors::TarExtractor,
+  # ...
+}
+----
+
+=== Selection Logic
+
+The `Archive` class selects the appropriate extractor:
+
+[source,ruby]
+----
+class Archive
+  def extract(target = nil, **options)
+    target ||= default_target
+    validate_target(target)
+
+    extension = extract_extension
+    extractor_class = TYPES[extension]
+
+    raise UnknownArchiveError unless extractor_class
+
+    extractor_class.new(@archive).extract(target)
+  end
+end
+----
+
+=== Special Cases
+
+==== Compound Extraction
+
+Some formats require multiple extractors:
+
+[source,ruby]
+----
+class GzipExtractor < Extractor
+  def extract(target)
+    # Decompress to temp file
+    temp_file = decompress_to_temp
+
+    # Check if result is TAR
+    if tar_file?(temp_file)
+      # Delegate to TarExtractor
+      TarExtractor.new(temp_file).extract(target)
+    else
+      # Move single file to target
+      FileUtils.mv(temp_file, target)
+    end
+  end
+end
+----
+
+==== Fallback Logic
+
+EXE files use fallback logic:
+
+[source,ruby]
+----
+def extractor_for_exe
+  # Try 7-Zip first
+  begin
+    return Extractors::SevenZipExtractor
+  rescue
+    # Fall back to CAB
+    return Extractors::CabExtractor
+  end
+end
+----
+
+=== Adding New Extractors
+
+To add a new format:
+
+. Create the extractor class
+. Register in TYPES hash
+. Handle compound formats if needed
+
+[source,ruby]
+----
+# 1. Create extractor
+module Extractors
+  class RarExtractor < Extractor
+    def extract(target)
+      # Implementation
+    end
+  end
+end
+
+# 2. Register
+TYPES["rar"] = Extractors::RarExtractor
+----
+
+=== See Also
+
+* <<design-principles,Design Principles>>
+* <<extending,Extending Excavate>>

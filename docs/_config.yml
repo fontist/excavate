@@ -1,0 +1,108 @@
+title: "Excavate documentation"
+description: Recursive archive extraction for Ruby - extract nested archives with a single command. Pure Ruby library built on Omnizip and Cabriolet.
+url: https://omnizip.github.io
+baseurl: /excavate
+
+theme: just-the-docs
+remote_theme: just-the-docs/just-the-docs
+
+# AsciiDoc support
+asciidoc: {}
+asciidoctor:
+  attributes:
+    - idprefix=_
+    - source-highlighter=rouge
+    - icons=font
+    - experimental=''
+
+plugins:
+  - jekyll-asciidoc
+  - jekyll-seo-tag
+
+# Search configuration
+search_enabled: true
+search:
+  heading_level: 3
+  previews: 3
+  preview_words_before: 5
+  preview_words_after: 10
+  tokenizer_separator: /[\s/]+/
+  button: true
+
+# Enable copy button for code snippets
+enable_copy_code_button: true
+
+# Navigation
+nav_sort: case_insensitive
+
+# Footer
+footer_content: 'Copyright &copy; 2025 Ribose Inc.'
+
+# Color scheme - supports dark mode toggle
+color_scheme: light
+
+# Enable dark mode toggle
+color_schemes:
+  light:
+    name: Light
+  dark:
+    name: Dark
+
+# Allow users to toggle between themes
+color_scheme_toggle:
+  enabled: true
+
+# Logo
+logo: "/assets/logo.svg"
+
+# Auxiliary links
+aux_links:
+  "Excavate on GitHub":
+    - "https://github.com/omnizip/excavate"
+  "Report Issue":
+    - "https://github.com/omnizip/excavate/issues"
+
+aux_links_new_tab: true
+
+# Heading anchors
+heading_anchors: true
+
+# Back to top
+back_to_top: true
+back_to_top_text: "Back to top"
+
+# Last modified timestamps
+last_edit_timestamp: true
+last_edit_time_format: "%b %e %Y at %I:%M %p"
+
+# Edit on GitHub links
+gh_edit_link: true
+gh_edit_link_text: "Edit this page on GitHub"
+gh_edit_repository: "https://github.com/omnizip/excavate"
+gh_edit_branch: "main"
+gh_edit_source: docs
+gh_edit_view_mode: "edit"
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "default"
+      nav_exclude: false
+
+# Include files
+include:
+  - "*.adoc"
+  - "_diagrams"
+  - "assets"
+
+# Exclude files
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+
+# Permalink structure
+permalink: pretty

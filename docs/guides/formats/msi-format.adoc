@@ -1,0 +1,140 @@
+---
+title: MSI Format
+parent: Archive Formats
+grand_parent: Guides
+nav_order: 2
+---
+
+== MSI Format
+
+=== Purpose
+
+This guide covers working with Windows Installer (MSI) packages using Excavate.
+
+=== References
+
+* https://docs.microsoft.com/en-us/windows/win32/msi/windows-installer-portal[Windows Installer Documentation]
+
+=== Concepts
+
+MSI (Microsoft Installer) files are OLE compound documents containing Windows
+Installer databases and embedded CAB archives with the actual files to install.
+
+=== Basic Usage
+
+==== Extract MSI File
+
+[source,ruby]
+----
+# Basic extraction (CAB files remain compressed)
+Excavate::Archive.new('installer.msi').extract
+
+# Recursive extraction (CAB files are extracted)
+Excavate::Archive.new('installer.msi').extract(recursive_packages: true)
+----
+
+=== MSI Structure
+
+MSI files are OLE compound documents containing:
+
+[source]
+----
+installer.msi
+├── Binary/           # Custom action DLLs
+├── Data/             # CAB archives (data1.cab, data2.cab, etc.)
+├── Tables/           # MSI database tables
+└── Streams/          # Embedded files and streams
+----
+
+=== When to Use Recursive
+
+Use `recursive_packages: true` to extract file contents:
+
+[source,ruby]
+----
+# Without recursive - you get CAB files
+Excavate::Archive.new('setup.msi').extract
+# Result: setup/data1.cab, setup/data2.cab
+
+# With recursive - you get actual files
+Excavate::Archive.new('setup.msi').extract(recursive_packages: true)
+# Result: setup/file1.dll, setup/file2.exe, etc.
+----
+
+=== Extracting Specific Content
+
+==== Extract DLL Files
+
+[source,ruby]
+----
+Excavate::Archive.new('installer.msi').extract(
+  recursive_packages: true,
+  filter: '**/*.dll'
+)
+----
+
+==== Extract Fonts from MSI
+
+[source,ruby]
+----
+fonts = Excavate::Archive.new('fonts.msi').extract(
+  recursive_packages: true,
+  filter: '**/*.{ttf,otf}'
+)
+----
+
+=== File Sanitization
+
+Excavate sanitizes filenames from MSI files:
+
+* Path separators are removed
+* Non-ASCII characters are handled
+* CAB files are renamed with `.cab` extension
+
+=== Common Use Cases
+
+==== Analyze Installer Contents
+
+[source,ruby]
+----
+# List all files in an MSI
+Excavate::Archive.new('installer.msi').files(recursive_packages: true) do |path|
+  puts path
+end
+----
+
+==== Extract Resources
+
+[source,ruby]
+----
+# Extract all resources from an MSI
+Excavate::Archive.new('software.msi').extract(
+  recursive_packages: true,
+  filter: '**/*.{dll,exe,ocx}'
+)
+----
+
+=== CLI Usage
+
+[source,bash]
+----
+# Extract MSI recursively
+excavate -r installer.msi
+
+# Extract with filter
+excavate -r --filter "**/*.dll" installer.msi
+----
+
+=== Technical Details
+
+Excavate uses the Omnizip gem's OLE support:
+
+* Extracts OLE compound document structure
+* Identifies embedded CAB files
+* Renames detected CABs with `.cab` extension
+* Passes CABs to recursive extraction
+
+=== Related Topics
+
+* <<cab-format,CAB Format>> - Files embedded in MSI
+* <<../advanced-usage/recursive-extraction,Recursive Extraction>>

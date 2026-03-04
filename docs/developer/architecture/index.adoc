@@ -1,0 +1,79 @@
+---
+title: Architecture
+parent: Developer Documentation
+has_children: true
+---
+
+== Architecture
+
+=== Purpose
+
+Understanding Excavate's design and architecture.
+
+=== Design Principles
+
+Excavate follows these principles:
+
+.Single Responsibility:: Each class has one clear purpose
+.Open/Closed:: Open for extension, closed for modification
+.Dependency Inversion:: Depend on abstractions, not concretions
+.MECE:: Mutually Exclusive, Collectively Exhaustive
+
+=== Topics
+
+[cols="1,4"]
+|===
+| Topic | Description
+
+| <<design-principles,Design Principles>>
+| OOP principles used
+
+| <<extractor-pattern,Extractor Pattern>>
+| The extractor base class
+
+| <<format-detection,Format Detection>>
+| How detection works
+
+| <<extending,Extending>>
+| Adding new extractors
+
+| <<diagrams,Diagrams>>
+| Architecture diagrams
+|===
+
+=== High-Level Architecture
+
+[source]
+----
+┌─────────────────────────────────────────────────────────────┐
+│                     Excavate::Archive                       │
+│           (Facade providing unified interface)              │
+└───────────────────────────┬─────────────────────────────────┘
+                            │
+                            │ delegates to
+                            │
+    ┌───────────────────────┴───────────────────────┐
+    │           Format Type Registry                │
+    │           (TYPES hash mapping)                │
+    └───────────────────────┬───────────────────────┘
+                            │
+                            │ instantiates
+                            │
+    ┌───────────────────────┴───────────────────────┐
+    │           Extractors::Extractor               │
+    │           (Abstract base class)               │
+    └───────────────────────────┬───────────────────────┘
+                            │
+                            │ specialized by
+                            │
+    ┌───────┬───────┬───────┼───────┬───────┬───────┐
+    │       │       │       │       │       │       │
+   Cab    Cpio    Gzip    Xar     Zip    SevenZip  ...
+    │       │       │       │       │       │
+    └───────┴───────┴───────┴───────┴───────┴───────┘
+              Powered by Omnizip & Cabriolet
+----
+
+=== Next Steps
+
+Explore specific topics for detailed architectural documentation.

@@ -1,0 +1,266 @@
+---
+title: Error Handling
+parent: Advanced Usage
+grand_parent: Guides
+nav_order: 2
+---
+
+== Error Handling
+
+=== Purpose
+
+This guide covers robust error handling patterns for Excavate operations.
+
+=== References
+
+* xref:../../reference/api.adoc[API Reference]
+
+=== Concepts
+
+Excavate provides specific error classes for different failure scenarios,
+allowing for precise error handling and recovery.
+
+=== Error Class Hierarchy
+
+[source]
+----
+Excavate::Error (base class)
+├── TargetExistsError
+├── TargetNotEmptyError
+├── TargetNotFoundError
+└── UnknownArchiveError
+----
+
+=== Base Error Class
+
+All Excavate errors inherit from `Excavate::Error`:
+
+[source,ruby]
+----
+begin
+  Excavate::Archive.new('archive.zip').extract
+rescue Excavate::Error => e
+  puts "Extraction failed: #{e.message}"
+end
+----
+
+=== TargetExistsError
+
+Raised when the target file or directory already exists.
+
+[source,ruby]
+----
+begin
+  Excavate::Archive.new('package.zip').extract
+rescue Excavate::TargetExistsError => e
+  puts "Target exists: #{e.message}"
+  # => "Target file `package` already exists."
+end
+----
+
+.Handling Strategy
+[source,ruby]
+----
+begin
+  archive.extract(target)
+rescue Excavate::TargetExistsError
+  # Option 1: Use a different target
+  archive.extract("#{target}_new")
+
+  # Option 2: Remove existing and retry
+  FileUtils.rm_rf(target)
+  archive.extract(target)
+end
+----
+
+=== TargetNotEmptyError
+
+Raised when the target directory exists and is not empty.
+
+[source,ruby]
+----
+begin
+  Excavate::Archive.new('package.zip').extract('/non/empty/dir')
+rescue Excavate::TargetNotEmptyError => e
+  puts "Directory not empty: #{e.message}"
+  # => "Target directory `dir` is not empty."
+end
+----
+
+.Handling Strategy
+[source,ruby]
+----
+begin
+  archive.extract(target)
+rescue Excavate::TargetNotEmptyError
+  # Option 1: Clean directory first
+  FileUtils.rm_rf(Dir.glob("#{target}/*"))
+  archive.extract(target)
+
+  # Option 2: Use a clean directory
+  archive.extract("#{target}_clean")
+end
+----
+
+=== TargetNotFoundError
+
+Raised when a specified file or filter pattern matches nothing.
+
+[source,ruby]
+----
+# Missing file
+begin
+  Excavate::Archive.new('data.zip').extract(files: ['missing.txt'])
+rescue Excavate::TargetNotFoundError => e
+  puts "Not found: #{e.message}"
+  # => "File `missing.txt` not found."
+end
+
+# No filter match
+begin
+  Excavate::Archive.new('fonts.zip').extract(filter: '*.pdf')
+rescue Excavate::TargetNotFoundError => e
+  puts "No match: #{e.message}"
+  # => "Filter `*.pdf` matched no file."
+end
+----
+
+.Handling Strategy
+[source,ruby]
+----
+begin
+  archive.extract(files: requested_files)
+rescue Excavate::TargetNotFoundError
+  # List available files
+  available = []
+  archive.files { |path| available << path }
+
+  puts "Requested files not found. Available:"
+  puts available
+end
+----
+
+=== UnknownArchiveError
+
+Raised when the archive format is not recognized.
+
+[source,ruby]
+----
+begin
+  Excavate::Archive.new('unknown.dat').extract
+rescue Excavate::UnknownArchiveError => e
+  puts "Unknown format: #{e.message}"
+  # => "Could not unarchive `unknown.dat`."
+end
+----
+
+.Handling Strategy
+[source,ruby]
+----
+begin
+  archive.extract
+rescue Excavate::UnknownArchiveError
+  # Check file extension
+  ext = File.extname(archive_path)
+
+  # Verify file exists
+  unless File.exist?(archive_path)
+    raise "File not found: #{archive_path}"
+  end
+
+  # Check if format is supported
+  unless %w[.zip .tar .tar.gz .msi .7z].include?(ext)
+    raise "Unsupported format: #{ext}"
+  end
+end
+----
+
+=== Complete Error Handling Pattern
+
+[source,ruby]
+----
+def safe_extract(archive_path, target, options = {})
+  archive = Excavate::Archive.new(archive_path)
+
+  begin
+    result = archive.extract(target, **options)
+    { success: true, result: result }
+  rescue Excavate::TargetExistsError => e
+    { success: false, error: :target_exists, message: e.message }
+  rescue Excavate::TargetNotEmptyError => e
+    { success: false, error: :target_not_empty, message: e.message }
+  rescue Excavate::TargetNotFoundError => e
+    { success: false, error: :target_not_found, message: e.message }
+  rescue Excavate::UnknownArchiveError => e
+    { success: false, error: :unknown_format, message: e.message }
+  rescue Excavate::Error => e
+    { success: false, error: :extraction_failed, message: e.message }
+  end
+end
+
+# Usage
+result = safe_extract('package.zip', 'output', recursive_packages: true)
+
+if result[:success]
+  puts "Extracted to: #{result[:result]}"
+else
+  case result[:error]
+  when :target_exists
+    puts "Target exists, removing..."
+    FileUtils.rm_rf('output')
+    retry
+  when :unknown_format
+    puts "Cannot process this file type"
+  else
+    puts "Error: #{result[:message]}"
+  end
+end
+----
+
+=== CLI Exit Codes
+
+The CLI uses specific exit codes:
+
+[cols="1,1,3"]
+|===
+| Code | Name | Description
+
+| 0
+| SUCCESS
+| Extraction successful
+
+| 1
+| UNKNOWN_ERROR
+| Unexpected error
+
+| 2
+| TARGET_EXISTS
+| Target already exists
+
+| 3
+| TARGET_NOT_EMPTY
+| Target directory not empty
+
+| 4
+| TARGET_NOT_FOUND
+| File not found in archive
+|===
+
+.Shell Script Error Handling
+[source,bash]
+----
+#!/bin/bash
+excavate package.zip
+case $? in
+  0) echo "Success" ;;
+  2) echo "Target exists" ;;
+  3) echo "Target not empty" ;;
+  4) echo "File not found" ;;
+  *) echo "Unknown error" ;;
+esac
+----
+
+=== Related Topics
+
+* xref:../../reference/api.adoc[API Reference]
+* <<performance-tuning,Performance Tuning>>

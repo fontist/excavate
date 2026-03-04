@@ -1,0 +1,156 @@
+---
+title: XAR/PKG Format
+parent: Archive Formats
+grand_parent: Guides
+nav_order: 6
+---
+
+== XAR/PKG Format
+
+=== Purpose
+
+This guide covers working with XAR archives and macOS installer packages (PKG)
+using Excavate.
+
+=== References
+
+* https://github.com/mackyle/xar[XAR Format]
+
+=== Concepts
+
+XAR (eXtensible ARchive) is an archive format used primarily for macOS
+installer packages (`.pkg`). PKG files contain XAR archives with CPIO payloads.
+
+=== Basic Usage
+
+==== Extract PKG File
+
+[source,ruby]
+----
+# Basic extraction (CPIO remains compressed)
+Excavate::Archive.new('Installer.pkg').extract
+
+# Recursive extraction (payload is extracted)
+Excavate::Archive.new('Installer.pkg').extract(recursive_packages: true)
+----
+
+==== Extract XAR File
+
+[source,ruby]
+----
+Excavate::Archive.new('archive.xar').extract
+----
+
+=== PKG Structure
+
+macOS installer packages contain:
+
+[source]
+----
+Installer.pkg
+├── Distribution      # Installer configuration XML
+├── Resources/        # Images, licenses, etc.
+└── Packages/
+    └── Package.pkg/
+        ├── Bom       # Bill of Materials
+        ├── Info.plist
+        └── Payload   # CPIO.GZ archive with files
+----
+
+=== When to Use Recursive
+
+Use `recursive_packages: true` to extract file contents:
+
+[source,ruby]
+----
+# Without recursive - you get Payload file
+Excavate::Archive.new('Installer.pkg').extract
+# Result: Installer/Distribution, Installer/Packages/Package.pkg/Payload
+
+# With recursive - Payload is extracted
+Excavate::Archive.new('Installer.pkg').extract(recursive_packages: true)
+# Result: Installer/Applications/..., Installer/Library/..., etc.
+----
+
+=== XAR Characteristics
+
+[cols="1,2"]
+|===
+| Characteristic | Description
+
+| File extension
+| `.xar`, `.pkg`
+
+| Compression
+| GZIP, BZIP2, LZMA, None
+
+| Platform
+| macOS (primary)
+|===
+
+=== Common Use Cases
+
+==== Extract macOS Application
+
+[source,ruby]
+----
+Excavate::Archive.new('App.pkg').extract(
+  recursive_packages: true,
+  filter: '**/Applications/**/*'
+)
+----
+
+==== Extract Installer Resources
+
+[source,ruby]
+----
+resources = Excavate::Archive.new('Installer.pkg').extract(
+  filter: '**/Resources/**/*'
+)
+----
+
+==== Analyze Installer Contents
+
+[source,ruby]
+----
+# List all files in a PKG
+Excavate::Archive.new('Installer.pkg').files(recursive_packages: true) do |path|
+  puts path
+end
+----
+
+=== CLI Usage
+
+[source,bash]
+----
+# Extract PKG recursively
+excavate -r Installer.pkg
+
+# Extract with filter
+excavate -r --filter "**/*.app" Installer.pkg
+----
+
+=== Technical Details
+
+Excavate uses the Omnizip gem's XAR support:
+
+* Extracts XAR archive structure
+* Renames Payload to Payload.cpio.gz for recognition
+* Passes to CPIO/GZIP extractors recursively
+
+=== Payload Handling
+
+The PKG Payload is a CPIO archive, often GZIP compressed:
+
+[source]
+----
+# Excavate handles this chain automatically:
+# PKG (XAR) → Payload (CPIO.GZ) → Files
+
+Excavate::Archive.new('Installer.pkg').extract(recursive_packages: true)
+----
+
+=== Related Topics
+
+* <<tar-format,TAR Format>> - Similar Unix archive format
+* <<../advanced-usage/recursive-extraction,Recursive Extraction>>

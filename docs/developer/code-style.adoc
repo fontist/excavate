@@ -1,0 +1,235 @@
+---
+title: Code Style
+parent: Developer Documentation
+nav_order: 3
+---
+
+== Code Style
+
+=== Purpose
+
+Coding standards for Excavate development.
+
+=== General Principles
+
+. **Readability**: Code should be easy to understand
+. **Simplicity**: Avoid unnecessary complexity
+. **Consistency**: Follow existing patterns
+. **MECE**: Mutually Exclusive, Collectively Exhaustive
+
+=== Ruby Style
+
+Excavate follows standard Ruby conventions with Rubocop enforcement.
+
+==== Indentation
+
+* Use 2 spaces for indentation
+* No tabs
+* Max line length: 80 characters
+
+==== Naming
+
+[source,ruby]
+----
+# Classes: PascalCase
+class ZipExtractor
+end
+
+# Methods/Variables: snake_case
+def extract_archive
+  target_directory = "output"
+end
+
+# Constants: SCREAMING_SNAKE_CASE
+MAX_RETRIES = 5
+
+# Predicates: question mark suffix
+def archive_exists?
+end
+----
+
+==== Methods
+
+* Keep methods short (< 10 lines)
+* Single responsibility per method
+* Use keyword arguments for options
+
+[source,ruby]
+----
+# Good
+def extract(target, recursive: false, filter: nil)
+end
+
+# Bad
+def extract(target, recursive, filter)
+end
+----
+
+=== Object-Oriented Design
+
+==== Single Responsibility
+
+Each class should have one clear purpose:
+
+[source,ruby]
+----
+# Good: Focused responsibility
+class ZipExtractor
+  def extract(target)
+    # Only handles ZIP extraction
+  end
+end
+
+# Bad: Multiple responsibilities
+class ArchiveHandler
+  def extract(target)
+    # Handles ZIP, TAR, CAB...
+  end
+end
+----
+
+==== Dependency Injection
+
+Prefer dependency injection:
+
+[source,ruby]
+----
+# Good: Injected dependency
+class Archive
+  def initialize(path, extractor: nil)
+    @extractor = extractor || default_extractor
+  end
+end
+
+# Bad: Hardcoded dependency
+class Archive
+  def initialize(path)
+    @extractor = ZipExtractor.new(path)
+  end
+end
+----
+
+=== Error Handling
+
+==== Specific Exceptions
+
+Use specific error classes:
+
+[source,ruby]
+----
+# Good
+raise TargetExistsError, "Target already exists"
+
+# Bad
+raise "Target already exists"
+----
+
+==== Exception Messages
+
+Include helpful context:
+
+[source,ruby]
+----
+# Good
+raise UnknownArchiveError, "Could not unarchive `#{path}`"
+
+# Bad
+raise UnknownArchiveError, "Unknown format"
+----
+
+=== Documentation
+
+==== Public Methods
+
+Document public methods:
+
+[source,ruby]
+----
+# Extract archive to target directory
+#
+# @param target [String, nil] Target directory path
+# @param recursive_packages [Boolean] Extract nested archives
+# @param files [Array<String>] Specific files to extract
+# @param filter [String, nil] Glob pattern for filtering
+# @return [String, Array<String>] Target path or extracted file paths
+# @raise [TargetExistsError] If target already exists
+# @raise [UnknownArchiveError] If format not recognized
+def extract(target = nil, recursive_packages: false, files: [], filter: nil)
+end
+----
+
+==== Complex Logic
+
+Add comments for complex logic:
+
+[source,ruby]
+----
+def extract_recursive(target)
+  # Find all extracted files that might be archives
+  potential_archives = Dir.glob("#{target}/**/*").select do |file|
+    File.file?(file) && archive_extension?(file)
+  end
+
+  # Extract each nested archive
+  potential_archives.each do |archive|
+    # ...
+  end
+end
+----
+
+=== Testing
+
+==== Descriptive Names
+
+Use descriptive test names:
+
+[source,ruby]
+----
+# Good
+it 'extracts ZIP archive to target directory'
+
+# Bad
+it 'works'
+----
+
+==== One Assertion per Test
+
+[source,ruby]
+----
+# Good
+it 'creates target directory' do
+  extractor.extract(target)
+  expect(Dir.exist?(target)).to be true
+end
+
+it 'extracts all files' do
+  extractor.extract(target)
+  expect(Dir.glob("#{target}/*").size).to eq(3)
+end
+
+# Bad
+it 'extracts correctly' do
+  extractor.extract(target)
+  expect(Dir.exist?(target)).to be true
+  expect(Dir.glob("#{target}/*").size).to eq(3)
+end
+----
+
+=== Running Rubocop
+
+[source,bash]
+----
+# Check all files
+bundle exec rubocop
+
+# Auto-fix issues
+bundle exec rubocop -A
+
+# Generate config for remaining issues
+bundle exec rubocop --auto-gen-config
+----
+
+=== See Also
+
+* <<contributing,Contributing>>
+* <<testing,Testing>>

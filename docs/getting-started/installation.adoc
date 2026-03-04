@@ -1,0 +1,224 @@
+---
+title: Installation
+parent: Getting Started
+nav_order: 1
+---
+
+== Installation
+
+=== Purpose
+
+This guide covers installing Excavate on your system. Excavate is a 100% pure
+Ruby gem with no native dependencies, making installation straightforward on any
+platform that supports Ruby.
+
+=== References
+
+* https://rubygems.org/gems/excavate[Excavate on RubyGems]
+* https://www.ruby-lang.org/en/documentation/installation/[Installing Ruby]
+
+=== Concepts
+
+Excavate is distributed as a Ruby gem through RubyGems.org. It requires Ruby 2.7
+or later and has no compiled dependencies, ensuring compatibility across all
+platforms including Linux, macOS, Windows, and BSD.
+
+=== Pure Ruby Benefits
+
+Excavate is a 100% pure Ruby gem with no native extensions:
+
+* **No compilation required**: Works immediately after installation
+* **Cross-platform**: Same gem works on Linux, macOS, Windows, BSD
+* **Multiple Ruby implementations**: MRI, JRuby, TruffleRuby
+* **No system dependencies**: No need for libarchive, 7-zip, or other tools
+* **Easy deployment**: No build tools needed in production
+
+=== Requirements
+
+==== Ruby Version
+
+Excavate requires Ruby 2.7 or later. Check your Ruby version:
+
+[source,bash]
+----
+ruby --version
+----
+
+If you need to install or update Ruby, see the https://www.ruby-lang.org/en/documentation/installation/[official Ruby installation guide].
+
+==== Operating System Support
+
+Excavate works on all platforms that support Ruby:
+
+* Linux (all distributions)
+* macOS (10.14+)
+* Windows (10+)
+* BSD systems (FreeBSD, OpenBSD, NetBSD)
+* Any other Ruby-compatible platform
+
+==== Dependencies
+
+Excavate depends on these pure Ruby gems:
+
+[cols="1,2,2"]
+|===
+| Gem | Version | Purpose
+
+| omnizip
+| ~> 0.3.8
+| ZIP, 7-Zip, TAR, GZIP, XZ, CPIO formats
+
+| cabriolet
+| ~> 0.2.2
+| Microsoft CAB format
+
+| thor
+| ~> 1.0
+| Command-line interface framework
+|===
+
+All dependencies are automatically installed with Excavate.
+
+=== Installation Methods
+
+==== Method 1: Installing from RubyGems (Recommended)
+
+Install the latest stable version:
+
+[source,bash]
+----
+gem install excavate
+----
+
+This installs both the library and the `excavate` command-line tool.
+
+==== Method 2: Using Bundler in Your Project
+
+Add to your `Gemfile`:
+
+[source,ruby]
+----
+gem 'excavate'
+----
+
+Then install:
+
+[source,bash]
+----
+bundle install
+----
+
+==== Method 3: Installing from Source
+
+For development or to use unreleased features:
+
+[source,bash]
+----
+git clone https://github.com/omnizip/excavate.git
+cd excavate
+bundle install
+bundle exec rake install
+----
+
+=== Verifying Installation
+
+After installation, verify Excavate is available:
+
+[source,bash]
+----
+excavate --version
+----
+
+You should see output like:
+
+[source,text]
+----
+excavate version 1.0.0
+----
+
+Test basic functionality:
+
+[source,bash]
+----
+excavate --help
+----
+
+This displays the available commands.
+
+=== Quick Test
+
+Create a test archive and extract it:
+
+[source,ruby]
+----
+require 'excavate'
+
+# Create a simple test
+File.write('test.txt', 'Hello, Excavate!')
+system('zip test.zip test.txt')
+
+# Extract using Excavate
+archive = Excavate::Archive.new('test.zip')
+archive.extract('output')
+
+puts "Extracted to: #{archive.extract('output')}"
+----
+
+=== Troubleshooting
+
+==== Command Not Found
+
+If `excavate` is not found after installation:
+
+1. Ensure the gem binaries directory is in your PATH:
++
+[source,bash]
+----
+gem environment
+----
++
+Look for the "EXECUTABLE DIRECTORY" path.
+
+2. Add it to your PATH if needed (typically `~/.gem/ruby/X.X.X/bin`):
++
+[source,bash]
+----
+export PATH="$PATH:$(ruby -e 'puts Gem.user_dir')/bin"
+----
+
+==== Permission Errors
+
+If you get permission errors during installation:
+
+1. Use the `--user-install` flag:
++
+[source,bash]
+----
+gem install excavate --user-install
+----
+
+2. Or use a Ruby version manager like rbenv, rvm, or asdf instead of the system Ruby.
+
+==== Version Conflicts
+
+If you encounter dependency conflicts:
+
+[source,bash]
+----
+gem update --system
+gem install excavate
+----
+
+=== Next steps
+
+Now that Excavate is installed:
+
+* Continue to <<quick-start,Quick Start Guide>> to extract your first archive
+* Learn <<basic-usage,basic usage patterns>>
+* Explore <<../guides/index,comprehensive guides>> for different formats
+
+=== Bibliography
+
+* https://rubygems.org/gems/excavate[Excavate on RubyGems]
+* https://guides.rubygems.org/rubygems-basics/[RubyGems Basics]
+* https://bundler.io/[Bundler Documentation]

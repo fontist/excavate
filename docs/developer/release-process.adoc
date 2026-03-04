@@ -1,0 +1,186 @@
+---
+title: Release Process
+parent: Developer Documentation
+nav_order: 6
+---
+
+== Release Process
+
+=== Purpose
+
+How Excavate releases are created and published.
+
+=== Prerequisites
+
+* Commit access to the repository
+* RubyGems.org account with push permissions
+* familiarity with `gem-release` gem
+
+=== Release Checklist
+
+==== 1. Prepare Release
+
+[source,bash]
+----
+# Ensure clean working directory
+git status
+
+# Pull latest changes
+git pull origin main
+
+# Run tests
+bundle exec rspec
+
+# Run linter
+bundle exec rubocop
+----
+
+==== 2. Update Version
+
+Edit `lib/excavate/version.rb`:
+
+[source,ruby]
+----
+module Excavate
+  VERSION = "1.1.0"  # Update version
+end
+----
+
+==== 3. Update Changelog
+
+Update `CHANGELOG.md`:
+
+[source,markdown]
+----
+## 1.1.0 (2025-02-25)
+
+### Added
+- Support for RAR format
+- New filter pattern syntax
+
+### Fixed
+- Error handling for corrupted archives
+
+### Changed
+- Improved extraction performance
+----
+
+==== 4. Commit Version Bump
+
+[source,bash]
+----
+git add lib/excavate/version.rb CHANGELOG.md
+git commit -m "chore: bump version to 1.1.0"
+----
+
+==== 5. Create Tag
+
+[source,bash]
+----
+git tag v1.1.0
+git push origin main --tags
+----
+
+==== 6. Build Gem
+
+[source,bash]
+----
+gem build excavate.gemspec
+----
+
+==== 7. Push to RubyGems
+
+[source,bash]
+----
+gem push excavate-1.1.0.gem
+----
+
+=== Using gem-release
+
+The `gem-release` gem simplifies the process:
+
+[source,bash]
+----
+# Install gem-release
+gem install gem-release
+
+# Bump version and create tag
+gem bump --version minor  # or major, patch
+
+# Push to RubyGems
+gem release
+----
+
+=== Version Numbering
+
+Excavate follows Semantic Versioning:
+
+* **MAJOR**: Breaking changes
+* **MINOR**: New features, backward compatible
+* **PATCH**: Bug fixes, backward compatible
+
+Examples:
+
+* `1.0.0` → `1.0.1`: Bug fix
+* `1.0.1` → `1.1.0`: New feature
+* `1.1.0` → `2.0.0`: Breaking change
+
+=== Pre-Release Versions
+
+For testing before official release:
+
+[source,bash]
+----
+# Create pre-release version
+# In version.rb: VERSION = "1.1.0.pre.1"
+
+gem build excavate.gemspec
+gem push excavate-1.1.0.pre.1.gem
+----
+
+Users can install pre-release with:
+
+[source,bash]
+----
+gem install excavate --pre
+----
+
+=== GitHub Release
+
+After pushing to RubyGems:
+
+. Go to https://github.com/omnizip/excavate/releases
+. Click "Draft a new release"
+. Select the tag
+. Add release notes from CHANGELOG
+. Publish release
+
+=== Documentation Updates
+
+After release:
+
+. Update documentation site (if needed)
+. Verify RubyGems page shows new version
+. Update README badges if needed
+
+=== Rollback
+
+If issues are found after release:
+
+[source,bash]
+----
+# Yank the gem (use carefully)
+gem yank excavate -v 1.1.0
+
+# Fix the issue
+# ... make changes ...
+
+# Release fixed version
+gem bump --version patch
+gem release
+----
+
+=== See Also
+
+* <<contributing,Contributing>>
+* https://guides.rubygems.org/publishing/[RubyGems Publishing Guide]
