@@ -18,15 +18,14 @@ module Excavate
       @archive = archive
     end
 
-    def files(recursive_packages: false, files: [], filter: nil, &block)
+    def files(recursive_packages: false, files: [], filter: nil, &)
       # Auto-enable recursive_packages when extracting specific files
       recursive_packages = true if files.any?
-
       target = Dir.mktmpdir
       extract(target, recursive_packages: recursive_packages,
                       files: files, filter: filter)
 
-      all_files_in(target).map(&block)
+      all_files_in(target).map(&)
     ensure
       windows_safe_rm_rf(target)
     end
@@ -218,7 +217,11 @@ module Excavate
       replace_archive_with_contents(archive, target)
     rescue StandardError
       FileUtils.rm_rf(target)
-      raise unless normalized_extension(archive) == "exe"
+      # During recursive extraction of nested archives, silently skip
+      # any that fail (e.g. .msi files that aren't real OLE, .cab files
+      # with incompatible format, .exe files with unsupported compression).
+      # Only re-raise for file types we don't recognize as archives.
+      raise unless TYPES.key?(normalized_extension(archive))
     end
 
     def replace_archive_with_contents(archive, target)
