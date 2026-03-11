@@ -42,7 +42,9 @@ module Excavate
       end
 
       def strip_compression(data)
-        return Zlib::GzipReader.new(StringIO.new(data)).read if FileMagic.detect_bytes(data) == :gzip
+        if FileMagic.detect_bytes(data) == :gzip
+          return Zlib::GzipReader.new(StringIO.new(data)).read
+        end
 
         data
       end
@@ -51,8 +53,10 @@ module Excavate
         inner_type = FileMagic.detect_bytes(data)
         return if inner_type == :tar
 
+        inner_type ||= "unknown format"
+
         raise UnknownArchiveError,
-              "Expected tar inside #{@archive}, got #{inner_type || 'unknown format'}"
+              "Expected tar inside #{@archive}, got #{inner_type}"
       end
 
       def extract_pure_xz(target)
